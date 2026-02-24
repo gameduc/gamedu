@@ -1,0 +1,619 @@
+// Service Worker Kaydı (PWA Desteği İçin)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker Registered!', reg))
+            .catch(err => console.error('Service Worker Registration Failed!', err));
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Config.js üzerinden UI ayarlarının yapılması
+    if (typeof AppConfig !== 'undefined' && AppConfig.ui.primaryColor) {
+        document.documentElement.style.setProperty('--accent-color', AppConfig.ui.primaryColor);
+    }
+    loadGames();
+});
+
+function loadGames() {
+    const statusContainer = document.getElementById('statusContainer');
+    const gamesGrid = document.getElementById('gamesGrid');
+
+    // GitHub'da (Apps Script dışındayken) AppConfig'den oyun verilerini yükle
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+        if (typeof AppConfig !== 'undefined') {
+            setTimeout(() => {
+                // Config'den statik veriyi kullan 
+                renderGames(AppConfig.games, statusContainer, gamesGrid);
+            }, 600); // Küçük bir yükleme animasyonu efekti
+        } else {
+            showError("Config.js yüklenemedi. Lütfen sayfayı yenileyin.", statusContainer);
+        }
+    } else {
+        // Eğer hala Google Apps Script üzerinden yüklenmişse (Geri dönük uyumluluk)
+        google.script.run
+            .withSuccessHandler((games) => renderGames(games, statusContainer, gamesGrid))
+            .withFailureHandler((error) => showError(error, statusContainer))
+            .getGamesList();
+    }
+}
+
+function renderGames(games, statusContainer, gamesGrid) {
+    statusContainer.style.display = 'none';
+    gamesGrid.style.display = 'grid';
+    gamesGrid.innerHTML = '';
+
+    if (!games || games.length === 0 || games.error) {
+        showError(games.error || 'Hiç oyun bulunamadı.', statusContainer);
+        return;
+    }
+
+    games.forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        if (game.imageUrl) {
+            card.style.backgroundImage = `url('${game.imageUrl}')`;
+        }
+
+        // Sheet'ten hem SheetTabName hem ConfigSheetName, Config'ten id veya configSheet gelebilir
+        const configSheet = game.configSheet || game.ConfigSheetName || game.SheetTabName;
+        const redirectUrl = game.redirectUrl || game.RedirectUrl;
+
+        let badgeText = redirectUrl ? 'Dış Bağlantı' : 'Modüler Oyun';
+
+        card.innerHTML = `
+            <div class="card-content">
+                <div class="badge">${badgeText}</div>
+                <h3 class="game-title">${game.name || game.GameName || 'Bilinmeyen Oyun'}</h3>
+                <p class="game-desc">${game.description || game.Description || 'Harika bir oyun deneyimi.'}</p>
+            </div>
+            <div class="play-icon" style="${game.themeColor ? 'background:' + game.themeColor : ''}">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+        `;
+
+        card.addEventListener('click', () => launchGame(game, configSheet, redirectUrl));
+        gamesGrid.appendChild(card);
+    });
+}
+
+function showError(error, statusContainer) {
+    statusContainer.style.display = 'block';
+    statusContainer.innerHTML = `
+        <div style="color: #ef4444; margin-bottom: 10px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div>
+        <p>Oyunlar yüklenirken bir hata oluştu: <br>${error}</p>
+    `;
+    console.error("Hata:", error);
+}
+
+function launchGame(game, configSheet, redirectUrl) {
+    // SPA Mimarisine Geçiş (Faz 2 Hazırlığı)
+    // 1- Eğer oyunun bir Config Sheet'i varsa ÖNCELİKLE SPA içindeki Setup ekranını aç
+    if (configSheet && configSheet.trim() !== '') {
+        // Dinamik Oyun Setup Modülünün Tetiklenmesi 
+        document.getElementById('welcomeHero').style.display = 'none';
+        document.getElementById('gamesListArea').style.display = 'none';
+
+        // Setup Modülünü görünür(display:block) yapıyoruz.
+        const setupArea = document.getElementById('setupArea');
+        setupArea.style.display = 'block';
+        setupArea.classList.remove('hidden-spa-module');
+
+        document.getElementById('setupGameTitle').textContent = game.name || game.GameName || 'Oyun Kurulumu';
+
+        // Setup ekranını dolduracak fonksiyon çağrısı
+        loadGameSetup(game, configSheet);
+    }
+    // 2- Config Sheet yok ama harici bir url varsa oraya yönlendir (Eski oyunlar vs)
+    else if (redirectUrl && redirectUrl.trim() !== '') {
+        window.location.href = redirectUrl;
+    } else {
+        showOzelAlert('Bu oyun için bir yapılandırma bilgisi bulunamadı.', 'hata');
+    }
+}
+
+function teacherLogin() {
+    showOzelAlert('Öğretmen paneli giriş sistemi (Auth) Modülü Firebase (Veya Google Auth) üzerinden aktif edilecektir.', 'bilgi');
+}
+
+/* --- FAZ 2: DİNAMİK SETUP (AYAR) MODÜLÜ FONKSİYONLARI --- */
+
+let currentGameConfigData = [];
+let currentLoadedGame = null; // Başlatılacak oyunu tutmak için
+let currentGameSessionSheet = ''; // API'den dönen aktif oyun oturumu (Örn: Game_170...)
+
+function loadGameSetup(game, configSheet) {
+    currentLoadedGame = game;
+    const setupForm = document.getElementById('dynamicSetupForm');
+    setupForm.innerHTML = `
+        <div style="text-align:center; padding: 2rem; width:100%;">
+            <div class="loader" style="margin: 0 auto;"></div>
+            <p style="margin-top: 1rem; color: var(--text-muted);">"${configSheet}" yapılandırması getiriliyor...</p>
+        </div>
+    `;
+
+    // Eğer görsel varsa yükle, yoksa gizle
+    const imageArea = document.getElementById('setupImageArea');
+    if (game.bannerUrl) {
+        imageArea.style.backgroundImage = `url('${game.bannerUrl}')`;
+        imageArea.style.display = 'block';
+    } else {
+        imageArea.style.display = 'none';
+    }
+
+    // SPA Fetch API Entegrasyonu (Tam Bağımsız GitHub Uyumlu Mantık)
+    const apiUrl = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
+    if (apiUrl && apiUrl.trim() !== '') {
+        fetch(`${apiUrl}?api=true&action=getGameConfig&sheetName=${encodeURIComponent(configSheet)}`)
+            .then(res => res.json())
+            .then(data => populateSetupForm(data))
+            .catch(err => {
+                setupForm.innerHTML = `<p style="color:red; width:100%; text-align:center;">Hata: ${err}</p>`;
+            });
+    } else {
+        // Test ortamındaysa uydurma alanlar yerine gerçek Bang Config yapısını simüle et
+        setTimeout(() => {
+            const fakeConfig = [
+                { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
+                { SettingName: "ClassGrades", DisplayName: "Sınıf Seviyesi", Type: "multiselect", OptionsSource: "9. Sınıf, 10. Sınıf, 11. Sınıf, 12. Sınıf", DefaultValue: "9. Sınıf" },
+                { SettingName: "WinningPoints", DisplayName: "Kazanma Puanı (Limit)", Type: "number", DefaultValue: 10, Min: 5, Max: 50 },
+                { SettingName: "UnitStart", DisplayName: "Başlangıç Ünitesi", Type: "number", DefaultValue: 1, Min: 1, Max: 10 },
+                { SettingName: "UnitEnd", DisplayName: "Bitiş Ünitesi", Type: "number", DefaultValue: 10, Min: 1, Max: 10 }
+            ];
+            populateSetupForm(fakeConfig);
+        }, 1000);
+    }
+}
+
+function populateSetupForm(config) {
+    currentGameConfigData = config;
+    const setupForm = document.getElementById('dynamicSetupForm');
+    setupForm.innerHTML = '';
+
+    if (config.error) {
+        setupForm.innerHTML = `<p style="color:red; width:100%; text-align:center;">${config.error}</p>`;
+        return;
+    }
+
+    if (config.length === 0) {
+        setupForm.innerHTML = '<p style="width:100%; text-align:center;">Bu oyun için herhangi bir ayar bulunamadı. Direkt başlatabilirsiniz.</p>';
+        return;
+    }
+
+    config.forEach(setting => {
+        const formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+
+        const label = document.createElement('label');
+        label.setAttribute('for', setting.SettingName);
+        label.textContent = setting.DisplayName + ':';
+        formGroup.appendChild(label);
+
+        let inputElement;
+
+        switch (setting.Type) {
+            case 'number':
+                inputElement = document.createElement('input');
+                inputElement.type = 'number';
+                inputElement.id = setting.SettingName;
+                inputElement.name = setting.SettingName;
+                inputElement.value = setting.DefaultValue || '';
+                if (setting.Min !== undefined && setting.Min !== null) inputElement.min = setting.Min;
+                if (setting.Max !== undefined && setting.Max !== null) inputElement.max = setting.Max;
+                break;
+
+            case 'dropdown':
+                inputElement = document.createElement('select');
+                inputElement.id = setting.SettingName;
+                inputElement.name = setting.SettingName;
+                const options = setting.OptionsSource ? setting.OptionsSource.split(',') : [];
+                options.forEach(optionText => {
+                    const option = document.createElement('option');
+                    option.value = optionText.trim();
+                    option.textContent = optionText.trim();
+                    if (optionText.trim() == setting.DefaultValue) {
+                        option.selected = true;
+                    }
+                    inputElement.appendChild(option);
+                });
+                break;
+
+            case 'multiselect':
+                inputElement = document.createElement('div');
+                inputElement.className = 'checkbox-group';
+                const multiOptions = setting.OptionsSource ? setting.OptionsSource.split(',') : [];
+                const defaultValues = String(setting.DefaultValue).split(',').map(val => val.trim());
+
+                multiOptions.forEach(optionText => {
+                    const checkboxId = `${setting.SettingName}_${optionText.trim()}`;
+                    const optContainer = document.createElement('label');
+                    optContainer.setAttribute('for', checkboxId);
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = checkboxId;
+                    checkbox.name = setting.SettingName;
+                    checkbox.value = optionText.trim();
+                    if (defaultValues.includes(optionText.trim())) {
+                        checkbox.checked = true;
+                    }
+
+                    optContainer.appendChild(checkbox);
+                    optContainer.appendChild(document.createTextNode(optionText.trim()));
+                    inputElement.appendChild(optContainer);
+                });
+                break;
+
+            case 'dynamic-dropdown':
+                inputElement = document.createElement('select');
+                inputElement.id = setting.SettingName;
+                inputElement.name = setting.SettingName;
+                inputElement.innerHTML = '<option value="">Yükleniyor...</option>';
+                // SPA Fetch API Entegrasyonu
+                const apiUrlDd = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
+                if (apiUrlDd && apiUrlDd.trim() !== '') {
+                    fetch(`${apiUrlDd}?api=true&action=getUniqueUnits&optionsSource=${encodeURIComponent(setting.OptionsSource)}`)
+                        .then(res => res.json())
+                        .then(units => {
+                            inputElement.innerHTML = '';
+                            if (!units.error && Array.isArray(units)) {
+                                units.forEach(unit => {
+                                    const option = document.createElement('option');
+                                    option.value = unit; option.textContent = unit;
+                                    if (unit == setting.DefaultValue) option.selected = true;
+                                    inputElement.appendChild(option);
+                                });
+                            } else {
+                                inputElement.innerHTML = '<option value="">Bulunamadı</option>';
+                            }
+                        })
+                        .catch(err => {
+                            inputElement.innerHTML = '<option value="">Hata</option>';
+                        });
+                }
+                break;
+
+            default:
+                inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.id = setting.SettingName;
+                inputElement.name = setting.SettingName;
+                inputElement.value = setting.DefaultValue || '';
+                break;
+        }
+
+        if (inputElement) {
+            formGroup.appendChild(inputElement);
+        }
+        setupForm.appendChild(formGroup);
+    });
+}
+
+// SETUP BUTONLARI EVENT LISTENER
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Lobiye Dön Butonu İşlevi
+    const backBtn = document.getElementById('backToLobbyBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', goToLobby);
+    }
+
+    // Oyunu Başlat İşlevi (API'ye Gönderecek)
+    const startBtn = document.getElementById('startGameBtn');
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            const formData = {};
+            currentGameConfigData.forEach(setting => {
+                const inputElement = document.getElementById(setting.SettingName);
+                if (setting.Type === 'multiselect') {
+                    const checkedValues = Array.from(document.querySelectorAll(`input[name="${setting.SettingName}"]:checked`))
+                        .map(cb => cb.value);
+                    formData[setting.SettingName] = checkedValues.join(',');
+                } else if (inputElement) {
+                    formData[setting.SettingName] = inputElement.value;
+                }
+            });
+
+            // Girdi kontrolleri
+            if (formData.UnitStart && formData.UnitEnd) {
+                if (parseInt(formData.UnitStart) > parseInt(formData.UnitEnd)) {
+                    showOzelAlert("Başlangıç ünitesi, bitiş ünitesinden büyük olamaz.", "hata");
+                    return;
+                }
+            }
+
+            const startBtnText = startBtn.textContent;
+            startBtn.textContent = 'Başlatılıyor...';
+            startBtn.disabled = true;
+
+            const apiUrlStart = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
+            if (apiUrlStart && apiUrlStart.trim() !== '') {
+                fetch(apiUrlStart, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'startGame', formData: formData }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                })
+                    .then(res => res.json())
+                    .then(response => {
+                        startBtn.textContent = startBtnText;
+                        startBtn.disabled = false;
+
+                        if (response.error) {
+                            showOzelAlert("Kurulum Hatası: " + response.error, "hata");
+                        } else {
+                            // Setup alanını gizle, Oyun Alanını Göster
+                            document.getElementById('setupArea').style.display = 'none';
+
+                            const gameArea = document.getElementById('gameArea');
+                            gameArea.style.display = 'block';
+                            gameArea.classList.remove('hidden-spa-module');
+
+                            // Üst Bar başlığını oyun ismi ile güncelle
+                            document.getElementById('playingGameTitle').textContent = currentLoadedGame ? (currentLoadedGame.name || currentLoadedGame.GameName) : 'Oyun';
+
+                            // API'nin ürettiği canli oyun sekmesini (Game_...) kaydet
+                            currentGameSessionSheet = response.gameSheetName;
+                            loadInitialGameState(response.gameSheetName); // Doğru state'i yükle
+                        }
+                    })
+                    .catch(error => {
+                        startBtn.textContent = startBtnText;
+                        startBtn.disabled = false;
+                        showOzelAlert("Oyunu başlatırken bağlantı hatası: " + error, "hata");
+                    });
+            } else {
+                // Apps script dışı test ortamı
+                setTimeout(() => {
+                    startBtn.textContent = startBtnText;
+                    startBtn.disabled = false;
+
+                    document.getElementById('setupArea').style.display = 'none';
+                    const gameArea = document.getElementById('gameArea');
+                    gameArea.style.display = 'block';
+                    gameArea.classList.remove('hidden-spa-module');
+
+                    document.getElementById('playingGameTitle').textContent = currentLoadedGame.name || 'Test Oyunu';
+
+                    // Sahte bir test yüklemesi
+                    updateGameUI({
+                        winningPoints: 10,
+                        currentWord: 'TEST KELİMESİ',
+                        groupNames: ['Grup 1', 'Grup 2'],
+                        scores: { 'Grup 1': 0, 'Grup 2': 0 },
+                        activeGroup: 'Grup 1'
+                    });
+                }, 1000);
+            }
+        });
+    }
+});
+
+// --- OYUN ALANI (GAME AREA) YARDIMCI FONKSİYONLARI ---
+
+function loadInitialGameState(sheetName) {
+    const apiUrlLoad = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
+    if (apiUrlLoad && apiUrlLoad.trim() !== '') {
+        fetch(`${apiUrlLoad}?api=true&action=getInitialGameState&sheetName=${encodeURIComponent(sheetName)}`)
+            .then(res => res.json())
+            .then(state => {
+                if (state.error) {
+                    showOzelAlert("Oyun yüklenemedi: " + state.error, "hata");
+                    return;
+                }
+                updateGameUI(state);
+            })
+            .catch(error => {
+                showOzelAlert("Bağlantı hatası: " + error, "hata");
+            });
+    } else {
+        showOzelAlert("API adresi tanımsız. Lütfen config.js içindeki apiBaseUrl değerini girin.", "hata");
+    }
+}
+
+// Lobi Ekranına (Ana Ekrana) SPA Geçişi
+function goToLobby() {
+    const setupArea = document.getElementById('setupArea');
+    if (setupArea) setupArea.style.display = 'none';
+
+    const gameArea = document.getElementById('gameArea');
+    if (gameArea) gameArea.style.display = 'none';
+
+    const welcomeHero = document.getElementById('welcomeHero');
+    if (welcomeHero) welcomeHero.style.display = 'block';
+
+    const gamesListArea = document.getElementById('gamesListArea');
+    if (gamesListArea) gamesListArea.style.display = 'block';
+}
+
+function updateGameUI(state) {
+    if (!state) return;
+
+    document.getElementById('winningPointsDisplay').textContent = state.winningPoints || 0;
+
+    const wordDisplay = document.getElementById('currentWordDisplay');
+    wordDisplay.textContent = state.currentWord || 'Kelime Bekleniyor...';
+
+    // Grupların skoru ve kutuları
+    const groupScoresContainer = document.getElementById('groupScores');
+    const activeGroupDropdown = document.getElementById('activeGroupDropdown');
+
+    groupScoresContainer.innerHTML = '';
+    activeGroupDropdown.innerHTML = '';
+
+    if (state.groupNames && Array.isArray(state.groupNames)) {
+        state.groupNames.forEach(gName => {
+            // Dropdown seçenekleri
+            const opt = document.createElement('option');
+            opt.value = gName;
+            opt.textContent = gName;
+            if (gName === state.activeGroup) opt.selected = true;
+            activeGroupDropdown.appendChild(opt);
+
+            // Score box
+            const box = document.createElement('div');
+            box.className = 'group-box ' + (gName === state.activeGroup ? 'active' : '');
+
+            box.innerHTML = `
+                <span class="group-name">${gName}</span>
+                <span class="group-score">${state.scores ? (state.scores[gName] || 0) : 0}</span>
+            `;
+            groupScoresContainer.appendChild(box);
+        });
+    }
+
+    // Kelime Stilleri (Bang vs)
+    wordDisplay.className = '';
+    wordDisplay.classList.add('word-base');
+    const wordInfo = document.getElementById('wordInfo');
+
+    if (state.currentWordIsGameInWord) {
+        wordDisplay.classList.remove('word-base', 'word-repeated');
+        switch (state.currentWord) {
+            case 'BANG!':
+                wordDisplay.classList.add('word-bang');
+                break;
+            case 'Give +1 Right':
+            case 'Give +1 Left':
+                wordDisplay.classList.add('word-give');
+                break;
+            case 'Take +1 Right':
+            case 'Take +1 Left':
+                wordDisplay.classList.add('word-take');
+                break;
+        }
+        if (wordInfo) wordInfo.textContent = '';
+    } else if (state.currentWordIsRepeated) {
+        wordDisplay.classList.remove('word-base');
+        wordDisplay.classList.add('word-repeated');
+        if (wordInfo) wordInfo.textContent = 'Bu kelime daha önce kullanıldı!';
+    } else {
+        if (wordInfo) wordInfo.textContent = '';
+    }
+
+    // Mesajlar ve Oyun Sonu
+    const gameMessageDiv = document.getElementById('gameMessage');
+    if (gameMessageDiv) gameMessageDiv.textContent = state.message || '';
+
+    const gameOverDiv = document.getElementById('gameOverMessage');
+    const newGameBtn = document.getElementById('newGameBtn');
+
+    if (gameOverDiv) {
+        if (state.gameEnded) {
+            gameOverDiv.textContent = state.winner ? `${state.winner} KAZANDI!` : 'Oyun Bitti!';
+            gameOverDiv.style.display = 'block';
+            if (newGameBtn) newGameBtn.style.display = 'inline-block';
+        } else {
+            gameOverDiv.style.display = 'none';
+            if (newGameBtn) newGameBtn.style.display = 'none';
+        }
+    }
+}
+
+// OYUN ALANI (GAME AREA) ETKİLEŞİM FONKSİYONU
+function handleGameAction(actionType) {
+    const activeGroupSelect = document.getElementById('activeGroupDropdown');
+    const activeGroup = activeGroupSelect ? activeGroupSelect.value : '';
+
+    // Config sayfası değil, o an oynanan canlı oyun (özel id'li sekme) kullanılmalı
+    const gameSheetToCall = currentGameSessionSheet;
+
+    const apiUrlAction = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
+    if (apiUrlAction && apiUrlAction.trim() !== '') {
+        fetch(apiUrlAction, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'processGameAction', sheetName: gameSheetToCall, actionType: actionType, activeGroup: activeGroup }),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        })
+            .then(res => res.json())
+            .then(state => {
+                if (state.error) {
+                    showOzelAlert("Sunucu Hatası: " + state.error, "hata");
+                    return;
+                }
+                updateGameUI(state);
+            })
+            .catch(error => {
+                showOzelAlert("Bağlantı hatası: " + error, "hata");
+            });
+    } else {
+        showOzelAlert(`Test Ortamı: ${actionType} işlemi backend'e iletilemedi.`, "bilgi");
+    }
+}
+
+// OYUN İÇİ BUTONLARA EVENT LISTENER'LARIN EKLENMESİ
+document.addEventListener('DOMContentLoaded', () => {
+    const IDs = {
+        'plusBtn': 'plus',
+        'minusBtn': 'minus',
+        'actionBtn': 'action',
+        'changeWordBtn': 'changeWord'
+    };
+
+    for (let [btnId, action] of Object.entries(IDs)) {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.addEventListener('click', () => handleGameAction(action));
+        }
+    }
+
+    const backToSetup = document.getElementById('backToSetupBtn');
+    if (backToSetup) {
+        backToSetup.addEventListener('click', () => {
+            // Confirm yapmadan önce uyar! 
+            showOzelAlert("Ayarlara dönerseniz mevcut oyun sıfırlanabilir. Emin misiniz?", "evethayir", (isConfirmed) => {
+                if (isConfirmed) {
+                    document.getElementById('gameArea').style.display = 'none';
+                    document.getElementById('setupArea').style.display = 'block';
+                }
+            });
+        });
+    }
+
+    const newGameBtn = document.getElementById('newGameBtn');
+    if (newGameBtn) {
+        newGameBtn.addEventListener('click', () => {
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('setupArea').style.display = 'block';
+        });
+    }
+});
+
+/* Sistem Mesajları Kuralı: showOzelAlert Uygulaması */
+function showOzelAlert(message, type, callback = null) {
+    const overlay = document.getElementById('ozelAlertOverlay');
+    const messageEl = document.getElementById('ozelAlertMessage');
+    const iconEl = document.getElementById('ozelAlertIcon');
+    const buttonsEl = document.getElementById('ozelAlertButtons');
+
+    messageEl.innerHTML = message;
+    buttonsEl.innerHTML = '';
+
+    if (type === 'hata') { iconEl.innerHTML = '❌'; iconEl.style.color = '#ef4444'; }
+    else if (type === 'bilgi') { iconEl.innerHTML = 'ℹ️'; iconEl.style.color = '#3b82f6'; }
+    else if (type === 'onay' || type === 'evethayir') { iconEl.innerHTML = '❓'; iconEl.style.color = '#eab308'; }
+    else { iconEl.innerHTML = '🔔'; iconEl.style.color = '#22c55e'; }
+
+    if (type === 'evethayir') {
+        const btnEvet = document.createElement('button');
+        btnEvet.className = 'ozel-alert-btn btn-tamam'; btnEvet.innerText = 'Evet';
+        btnEvet.onclick = () => { closeAlert(); if (callback) callback(true); };
+
+        const btnHayir = document.createElement('button');
+        btnHayir.className = 'ozel-alert-btn btn-hayir'; btnHayir.innerText = 'Hayır';
+        btnHayir.onclick = () => { closeAlert(); if (callback) callback(false); };
+
+        buttonsEl.appendChild(btnHayir); buttonsEl.appendChild(btnEvet);
+    } else {
+        const btnTamam = document.createElement('button');
+        btnTamam.className = 'ozel-alert-btn btn-tamam'; btnTamam.innerText = 'Tamam';
+        btnTamam.onclick = () => { closeAlert(); if (callback) callback(true); };
+        buttonsEl.appendChild(btnTamam);
+    }
+    overlay.classList.add('active');
+}
+
+function closeAlert() {
+    document.getElementById('ozelAlertOverlay').classList.remove('active');
+}

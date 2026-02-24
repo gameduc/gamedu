@@ -1,0 +1,524 @@
+:root {
+    --primary-bg: #0f172a;
+    --accent-color: #3b82f6;
+    --accent-hover: #2563eb;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-main: #f8fafc;
+    --text-muted: #cbd5e1;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--primary-bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    background-image:
+        radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+}
+
+/* Navbar (Glassmorphism) */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+    color: #fff;
+    text-decoration: none;
+}
+
+.logo-container img {
+    height: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.login-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 4rem 1rem 2rem;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, #60a5fa, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+}
+
+.hero p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Games Grid (Netflix Style) */
+.games-container {
+    padding: 2rem 5% 5rem;
+}
+
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.game-card {
+    background: var(--glass-bg);
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.game-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.95) 100%);
+    z-index: 1;
+    opacity: 0.9;
+}
+
+.game-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: rgba(96, 165, 250, 0.5);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+.game-card:hover .play-icon {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.card-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.game-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    flex-grow: 1;
+    margin-bottom: 1.5rem;
+}
+
+.badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 15px;
+    width: fit-content;
+}
+
+.play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 50px;
+    height: 50px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 3;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+}
+
+.play-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+    margin-left: 4px;
+}
+
+/* Loading & Status */
+.status-container {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.loader {
+    border: 3px solid var(--glass-border);
+    border-top: 3px solid var(--accent-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .games-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .navbar {
+        padding: 1rem 1rem;
+    }
+}
+
+/* Özel Alert (Kural 12 / Sistem Mesajları) */
+.ozel-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+
+.ozel-alert-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.ozel-alert-box {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    transform: scale(0.9);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(15px);
+}
+
+.ozel-alert-overlay.active .ozel-alert-box {
+    transform: scale(1);
+}
+
+.ozel-alert-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.ozel-alert-message {
+    font-size: 1.1rem;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.ozel-alert-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.ozel-alert-btn {
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-tamam {
+    background: var(--accent-color);
+    color: white;
+}
+
+.btn-hayir {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+}
+
+.btn-tamam:hover {
+    background: var(--accent-hover);
+}
+
+.btn-hayir:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Dinamik SPA Container'ı (Main Area) */
+#mainContent {
+    transition: opacity 0.3s ease;
+}
+
+/* Gizli modüller için */
+.hidden-spa-module {
+    display: none !important;
+}
+
+/* --- FAZ 2: ORTAK DİNAMİK SETUP (AYAR) EKRANI CSS --- */
+.container-setup {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 3rem;
+    max-width: 800px;
+    margin: 2rem auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+#setupGameTitle {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    background: linear-gradient(to right, #60a5fa, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.setup-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#dynamicSetupForm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+.form-group {
+    flex: 1 1 calc(50% - 20px);
+    /* Yan yana 2 kolon */
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+.form-group label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--glass-border);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    transition: all 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: rgba(15, 23, 42, 0.4);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    width: 100%;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    transform: scale(1.3);
+    cursor: pointer;
+    background: transparent;
+}
+
+.setup-image-area {
+    width: 100%;
+    height: 250px;
+    border-radius: 12px;
+    background-size: cover;
+    background-position: center;
+    display: none;
+    /* Resim varsa app.js aktif edecek */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* --- FAZ 2: OYUN EKRANI (GAME AREA) CSS --- */
+.group-box {
+    background: rgba(15, 23, 42, 0.4);
+    border: 2px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 15px 25px;
+    min-width: 120px;
+    text-align: center;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s;
+}
+
+.group-box.active {
+    border-color: #fca5a5;
+    background: rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+.group-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    display: block;
+}
+
+.group-score {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #60a5fa;
+    display: block;
+    text-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+}
+
+/* Oyun İçi Dinamik Kelime / Kart Durumları */
+.word-base {
+    color: #fff;
+}
+
+.word-repeated {
+    color: #ef4444;
+}
+
+.word-bang {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+    color: #fca5a5 !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+}
+
+.word-give {
+    background-color: rgba(245, 158, 11, 0.2) !important;
+    color: #fcd34d !important;
+    border-color: #f59e0b !important;
+}
+
+.word-take {
+    background-color: rgba(16, 185, 129, 0.2) !important;
+    color: #6ee7b7 !important;
+    border-color: #10b981 !important;
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eğitim Oyunları Portalı</title>
+    <!-- Mimarimiz (PWA) Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Modern Fontlar -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Ortak Stil Modülü -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+
+    <!-- Özel Alert Modal - Sistem Genelinde Ortak -->
+    <div id="ozelAlertOverlay" class="ozel-alert-overlay">
+        <div class="ozel-alert-box">
+            <div id="ozelAlertIcon" class="ozel-alert-icon">⚠️</div>
+            <div id="ozelAlertMessage" class="ozel-alert-message">Mesaj</div>
+            <div id="ozelAlertButtons" class="ozel-alert-buttons"></div>
+        </div>
+    </div>
+
+    <!-- Ortak Navbar Modülü -->
+    <nav class="navbar">
+        <a href="#" onclick="goToLobby(); return false;" class="logo-container">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="40" height="40" rx="10" fill="url(#paint0_linear)" />
+                <path d="M26 14L14 26" stroke="white" stroke-width="3" stroke-linecap="round" />
+                <path d="M14 14L26 26" stroke="white" stroke-width="3" stroke-linecap="round" />
+                <defs>
+                    <linearGradient id="paint0_linear" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#3B82F6" />
+                        <stop offset="1" stop-color="#8B5CF6" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <span>Eğitim Portalı</span>
+        </a>
+        <button class="login-btn" onclick="teacherLogin()">Öğretmen Girişi</button>
+    </nav>
+
+    <!-- ANA SPA (Single Page Application) ÇERÇEVESİ -->
+    <main id="mainContent">
+
+        <!-- Lobi Modülü: Karşılama Alanı -->
+        <section id="welcomeHero" class="hero">
+            <h1>Eğlenerek Öğrenmeye<br>Hazır Mısın?</h1>
+            <p>Oyun tabanlı öğrenme platformuna hoş geldin. Yüzlerce kelime, soru ve macera seni bekliyor. Hemen bir
+                oyun seç ve başla!</p>
+        </section>
+
+        <!-- Lobi Modülü: Oyun Listesi -->
+        <section id="gamesListArea" class="games-container">
+            <div id="statusContainer" class="status-container">
+                <div class="loader"></div>
+                <p>Oyunlar Yükleniyor...</p>
+            </div>
+            <div id="gamesGrid" class="games-grid" style="display: none;"></div>
+        </section>
+
+        <!-- Dinamik Setup Modülü (Faz 2) -->
+        <section id="setupArea" class="hidden-spa-module container-setup">
+            <h1 id="setupGameTitle">Oyun Kurulumu</h1>
+
+            <div class="setup-grid">
+                <div class="setup-controls">
+                    <form id="dynamicSetupForm">
+                        <div style="text-align:center; padding: 2rem;">
+                            <div class="loader" style="margin: 0 auto;"></div>
+                            <p style="margin-top: 1rem; color: var(--text-muted);">Ayarlar Yükleniyor...</p>
+                        </div>
+                    </form>
+
+                    <div class="button-group"
+                        style="margin-top: 2rem; display: flex; gap: 10px; justify-content: center;">
+                        <button type="button" id="startGameBtn" class="login-btn"
+                            style="font-size: 1.1rem; padding: 12px 30px;">Oyunu Başlat</button>
+                        <button type="button" id="backToLobbyBtn" class="login-btn"
+                            style="background: transparent; border: 1px solid var(--glass-border); font-size: 1.1rem; padding: 12px 30px;">Lobiye
+                            Dön</button>
+                    </div>
+                </div>
+                <!-- İleride oyunun kapak resmi dinamik olarak buraya eklenebilir -->
+                <div id="setupImageArea" class="setup-image-area"></div>
+            </div>
+        </section>
+
+        <!-- Oyun Ekran Modülü (Faz 2) -->
+        <section id="gameArea" class="hidden-spa-module" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+            <!-- Üst Bar: Puan ve Skorlar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1 id="playingGameTitle" style="font-size: 2rem; margin: 0; color: #fff;">OYUN ADI</h1>
+                <div
+                    style="background: rgba(59, 130, 246, 0.2); padding: 8px 15px; border-radius: 8px; font-weight: bold; color: #60a5fa;">
+                    Kazanma Puanı: <span id="winningPointsDisplay">0</span>
+                </div>
+            </div>
+
+            <!-- Takımlar / Grup Skorları Alanı -->
+            <div id="groupScores" class="group-scores-container"
+                style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 2rem;">
+                <!-- JS Tarafından Doldurulacak -->
+            </div>
+
+            <!-- Merkez: Soru / Kelime / İçerik Alanı -->
+            <div class="game-content-card"
+                style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 3rem; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 2rem;">
+                <div id="currentWordDisplay"
+                    style="font-size: 4rem; font-weight: 800; color: #fff; min-height: 100px; display: flex; align-items: center; justify-content: center; word-break: break-word;">
+                    Yükleniyor...
+                </div>
+                <p id="wordInfo" style="color: var(--text-muted); margin-top: 1rem;"></p>
+            </div>
+
+            <!-- Oyun Kontrolleri (Öğretmen Modu Tipi) -->
+            <div class="game-controls" style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                <div style="width: 100%; max-width: 500px; display: flex; gap: 10px;">
+                    <select id="activeGroupDropdown"
+                        style="flex: 1; padding: 15px; border-radius: 8px; background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid var(--glass-border); font-size: 1.2rem;"></select>
+                </div>
+
+                <div style="width: 100%; max-width: 500px; display: flex; gap: 10px;">
+                    <button id="plusBtn" class="login-btn" style="flex: 1; font-size: 2rem; padding: 10px;">+</button>
+                    <button id="minusBtn" class="login-btn"
+                        style="flex: 1; font-size: 2rem; padding: 10px; background: #ef4444; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">-</button>
+                    <button id="actionBtn" class="login-btn"
+                        style="flex: 1; font-size: 1.2rem; background: #f59e0b; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);">Aksiyon</button>
+                </div>
+
+                <div
+                    style="width: 100%; max-width: 500px; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1rem;">
+                    <button id="changeWordBtn" class="login-btn"
+                        style="flex: 1; min-width: 120px; background: #8b5cf6; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);">Sıradaki
+                        Kelime</button>
+                    <button id="backToSetupBtn" class="login-btn"
+                        style="flex: 1; min-width: 120px; background: transparent; border: 1px solid var(--glass-border);">Ayarlara
+                        Dön</button>
+                </div>
+            </div>
+
+            <!-- Mesaj ve Oyun Başı/Sonu Bildirimleri -->
+            <div id="gameMessage" style="text-align: center; margin-top: 1.5rem; font-size: 1.2rem; color: #cbd5e1;">
+            </div>
+            <div id="gameOverMessage"
+                style="display: none; text-align: center; margin-top: 2rem; font-size: 2.5rem; font-weight: bold; color: #ef4444;">
+            </div>
+
+            <!-- Yeni Oyun Butonu -->
+            <div style="text-align: center;">
+                <button id="newGameBtn" class="btn btn-primary" style="margin-top: 1rem; display: none;">Yeni Oyun
+                    Kur</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Ortak Modüller ve Mimari Bağlamları -->
+    <script src="./config.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+
+</html>
