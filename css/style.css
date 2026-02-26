@@ -522,3 +522,207 @@ body {
     color: #6ee7b7 !important;
     border-color: #10b981 !important;
 }
+
+/* =========================================
+   LINGO GAME EXCLUSIVE STYLES
+   ========================================= */
+
+.lingo-game-info {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 1rem;
+    font-size: 0.9em;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.lingo-game-info div {
+    padding: 5px 10px;
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.2);
+    font-weight: bold;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.lingo-game-info div span {
+    font-size: 0.75em;
+    color: #94a3b8;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.lingo-game-info div strong {
+    font-size: 1.2em;
+}
+
+.lingo-timer-display {
+    font-size: 2.2em;
+    font-weight: bold;
+    color: #ef4444;
+    margin: 10px auto;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 10px 20px;
+    border-radius: 12px;
+    max-width: fit-content;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    transition: color 0.3s;
+}
+
+.lingo-timer-display.running {
+    color: #10b981;
+}
+
+.lingo-game-board-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0;
+}
+
+.lingo-game-board,
+.lingo-correct-answer-display {
+    display: grid;
+    /* Grid columns will be set dynamically via JS based on word length */
+    gap: 6px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.lingo-letter-cell {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    font-weight: bold;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.3);
+    color: #fff;
+    box-sizing: border-box;
+    border-radius: 8px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+}
+
+.lingo-letter-cell.active-word-length {
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.lingo-letter-cell.hidden {
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.3);
+    box-shadow: none;
+}
+
+.lingo-letter-cell.stealing-row-bg {
+    background-color: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+}
+
+.lingo-letter-cell.correct {
+    background-color: #10b981;
+    border-color: #10b981;
+    color: white;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.lingo-letter-cell.present {
+    background-color: #eab308;
+    border-color: #eab308;
+    color: white;
+    box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+}
+
+.lingo-letter-cell.absent {
+    background-color: #475569;
+    border-color: #475569;
+    color: #94a3b8;
+}
+
+.lingo-guess-input-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+#lingoGuessInput {
+    padding: 12px;
+    font-size: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    background: rgba(15, 23, 42, 0.8);
+    color: white;
+    text-transform: uppercase;
+    text-align: center;
+    width: 250px;
+    letter-spacing: 5px;
+    font-weight: bold;
+}
+
+#lingoGuessInput:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+#lingoGuessInput:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.lingo-message {
+    margin-top: 1rem;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #ef4444;
+    min-height: 28px;
+    transition: opacity 0.3s;
+}
+
+.lingo-message.success {
+    color: #10b981;
+}
+
+/* Lingo Responsive Adjustments */
+@media (max-width: 500px) {
+    .lingo-letter-cell {
+        width: 45px;
+        height: 45px;
+        font-size: 1.5em;
+    }
+
+    .lingo-game-board,
+    .lingo-correct-answer-display {
+        gap: 4px;
+        padding: 6px;
+    }
+
+    #lingoGuessInput {
+        width: 200px;
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .lingo-letter-cell {
+        width: 38px;
+        height: 38px;
+        font-size: 1.3em;
+    }
+
+    #lingoGuessInput {
+        width: 160px;
+        letter-spacing: 2px;
+    }
+}
