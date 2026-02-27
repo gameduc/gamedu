@@ -1,10 +1,13 @@
-const CACHE_NAME = 'egitim-oyunlari-v1';
+const CACHE_NAME = 'egitim-oyunlari-v2';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
     '/config.js',
     '/css/style.css',
     '/js/app.js',
+    '/js/bang.js',
+    '/js/lingo.js',
+    '/js/beecomb.js',
     'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap'
 ];
 
