@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eğitim Oyunları Portalı</title>
+    <title>GamEdu - Eğitim Oyunları</title>
     <!-- Mimarimiz (PWA) Manifest -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#0f172a">
@@ -43,9 +43,14 @@
                     </linearGradient>
                 </defs>
             </svg>
-            <span>Eğitim Portalı</span>
+            <span>GamEdu - Eğitim Oyunları</span>
         </a>
-        <button class="login-btn" onclick="teacherLogin()">Öğretmen Girişi</button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="login-btn" onclick="teacherLogin()">Öğretmen Girişi</button>
+            <button onclick="document.querySelector('.navbar').style.display='none'"
+                style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem;"
+                title="Üst Menüyü Gizle">✖</button>
+        </div>
     </nav>
 
     <!-- ANA SPA (Single Page Application) ÇERÇEVESİ -->
@@ -113,7 +118,46 @@
 
             <!-- Merkez: Soru / Kelime / İçerik Alanı -->
             <div class="game-content-card"
-                style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 3rem; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 2rem;">
+                style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 3rem; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 2rem; position: relative;">
+
+                <!-- İpucu Toggle Butonu (Modern CSS Switch) -->
+                <div class="clue-toggle-container"
+                    style="position: absolute; top: 15px; right: 15px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.9rem; color: #cbd5e1; font-weight: bold;">İpucu</span>
+                    <label class="switch" style="position: relative; display: inline-block; width: 40px; height: 20px;">
+                        <input type="checkbox" id="clueToggleBtn" checked style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"
+                            style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .4s; border-radius: 34px;"></span>
+                    </label>
+                </div>
+
+                <!-- CSS For Switch (Inline for now or put to style.css) -->
+                <style>
+                    .switch input:checked+.slider {
+                        background-color: #3b82f6;
+                    }
+
+                    .switch input:focus+.slider {
+                        box-shadow: 0 0 1px #3b82f6;
+                    }
+
+                    .switch input:checked+.slider:before {
+                        transform: translateX(20px);
+                    }
+
+                    .slider:before {
+                        position: absolute;
+                        content: "";
+                        height: 16px;
+                        width: 16px;
+                        left: 2px;
+                        bottom: 2px;
+                        background-color: white;
+                        transition: .4s;
+                        border-radius: 50%;
+                    }
+                </style>
+
                 <div id="currentWordDisplay"
                     style="font-size: 4rem; font-weight: 800; color: #fff; min-height: 100px; display: flex; align-items: center; justify-content: center; word-break: break-word;">
                     Yükleniyor...
@@ -121,12 +165,7 @@
                 <p id="wordInfo" style="color: var(--text-muted); margin-top: 1rem;"></p>
             </div>
 
-            <!-- Oyun Kontrolleri (Öğretmen Modu Tipi) -->
             <div class="game-controls" style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
-                <div style="width: 100%; max-width: 500px; display: flex; gap: 10px;">
-                    <select id="activeGroupDropdown"
-                        style="flex: 1; padding: 15px; border-radius: 8px; background: rgba(15, 23, 42, 0.8); color: white; border: 1px solid var(--glass-border); font-size: 1.2rem;"></select>
-                </div>
 
                 <div style="width: 100%; max-width: 500px; display: flex; gap: 10px;">
                     <button id="plusBtn" class="login-btn" style="flex: 1; font-size: 2rem; padding: 10px;">+</button>
@@ -142,6 +181,7 @@
                         style="flex: 1; min-width: 120px; background: #8b5cf6; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);">Sıradaki
                         Kelime</button>
                     <button id="backToSetupBtn" class="login-btn"
+                        onclick="document.getElementById('gameArea').style.display='none'; document.getElementById('setupArea').style.display='block';"
                         style="flex: 1; min-width: 120px; background: transparent; border: 1px solid var(--glass-border);">Ayarlara
                         Dön</button>
                 </div>
@@ -156,16 +196,423 @@
 
             <!-- Yeni Oyun Butonu -->
             <div style="text-align: center;">
-                <button id="newGameBtn" class="btn btn-primary" style="margin-top: 1rem; display: none;">Yeni Oyun
-                    Kur</button>
+                <button id="restartGameBtn" class="login-btn"
+                    style="margin-top: 1rem; display: none; background: #2563eb; font-size: 1.2rem; padding: 12px 30px;">Yeniden
+                    Başlat</button>
+            </div>
+        </section>
+
+        <!-- Lingo Oyun Ekran Modülü (Faz 3) -->
+        <section id="lingoGameArea" class="hidden-spa-module" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 15px;">
+                <h1 id="lingoPlayingGameTitle" style="font-size: 2rem; margin: 0; color: #fff;">Lingo</h1>
+                <!-- Takımlar / Grup Skorları Alanı (Küçültüldü ve Başlıkla Aynı Hizaya Alındı) -->
+                <div id="lingoGroupScores" class="group-scores-container"
+                    style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <!-- JS Tarafından Doldurulacak -->
+                </div>
+            </div>
+
+            <!-- Oyun Bilgi ve Tahta Alanı -->
+            <div class="game-content-card lingo-board-card"
+                style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 2rem;">
+
+                <div class="lingo-game-info"
+                    style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 8px;">
+                        <span>Grup</span> <strong id="lingoCurrentPlayer">A</strong>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 8px;">
+                        <span>Harf</span> <strong id="lingoWordLength">4</strong>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 8px;">
+                        <span>Kota</span> <strong id="lingoQuota">1/x</strong>
+                    </div>
+                    <div
+                        style="background: rgba(239, 68, 68, 0.1); padding: 5px 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <span>Süre</span> <strong id="lingoTimerDisplay"
+                            style="color: #ef4444; font-size: 1.2rem;">--</strong>
+                    </div>
+                </div>
+
+                <div class="lingo-game-board-wrapper">
+                    <div id="lingoGameBoard" class="lingo-game-board">
+                        <!-- JS Grids will populate here -->
+                    </div>
+                </div>
+
+                <div id="lingoCorrectAnswerDisplay" class="lingo-correct-answer-display" style="display: none;">
+                </div>
+
+                <div class="lingo-guess-input-group mt-4">
+                    <input type="text" id="lingoGuessInput" placeholder="Tahmin..." maxlength="6" disabled
+                        autocomplete="off">
+                    <button id="lingoSubmitGuessBtn" class="login-btn" disabled>Gönder</button>
+                </div>
+
+                <div id="lingoMessage" class="lingo-message"></div>
+
+                <div
+                    style="width: 100%; max-width: 500px; display: flex; flex-wrap: wrap; gap: 10px; margin: 1rem auto 0 auto;">
+                    <button id="lingoNextWordBtn" class="login-btn"
+                        style="flex: 1; min-width: 120px; background: #8b5cf6;" disabled>Sıradaki Kelime</button>
+                    <button id="lingoBackToSetupBtn" class="login-btn"
+                        onclick="document.getElementById('lingoGameArea').style.display='none'; document.getElementById('setupArea').style.display='block';"
+                        style="flex: 1; min-width: 120px; background: transparent; border: 1px solid var(--glass-border);">Ayarlara
+                        Dön</button>
+                    <!-- Yönetici Paneli Havuza Atma -->
+                    <button id="lingoAddWordsToPoolBtn" class="login-btn"
+                        style="min-width: 50px; background: #10b981; display: none;" title="Tahminleri Havuza At">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 20px; height: 20px;">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="lingoGameOverMessage"
+                style="display: none; text-align: center; margin-top: 2rem; font-size: 2.5rem; font-weight: bold; color: #ef4444;">
+            </div>
+            <div style="text-align: center;">
+                <button id="lingoNewGameBtn" class="login-btn"
+                    onclick="document.getElementById('lingoGameArea').style.display='none'; document.getElementById('startGameBtn').click();"
+                    style="margin-top: 1rem; display: none; background: #2563eb; font-size: 1.2rem; padding: 12px 30px;">Yeniden
+                    Başlat</button>
+            </div>
+        </section>
+
+        <!-- BeeComb (Petek) Oyun Ekran Modülü (Faz 5) -->
+        <section id="beeCombGameArea" class="hidden-spa-module"
+            style="max-width: 1000px; margin: 0 auto; padding: 10px;">
+            <style>
+                /* 3D ve Canlı Hexagon (Petek) Tasarımı */
+                .beecomb-top-bar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: linear-gradient(135deg, rgba(245, 158, 11, 0.8), rgba(217, 119, 6, 0.9));
+                    border-radius: 16px;
+                    padding: 15px 25px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    backdrop-filter: blur(10px);
+                }
+
+                .beecomb-logo-area {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                }
+
+                /* Logonun şeffaf arılı hali varsayılarak boş bir arı badge eklendi (resim pathi ile değiştirilebilir) */
+                .beecomb-logo-badge {
+                    font-size: 2.5rem;
+                    filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.3));
+                }
+
+                .beecomb-counts {
+                    display: flex;
+                    gap: 20px;
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                }
+
+                /* Skor Kutuları 3D Hissi */
+                .beecomb-count-box {
+                    background: rgba(255, 255, 255, 0.15);
+                    border-radius: 12px;
+                    padding: 5px 15px;
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    color: #fff;
+                    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+                    box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.2), 0 2px 4px rgba(0, 0, 0, 0.2);
+                }
+
+                .bee-blue-txt {
+                    color: #60a5fa;
+                }
+
+                .bee-green-txt {
+                    color: #4ade80;
+                }
+
+                /* Petek Grid Düzeni (Yatay Scroll'a uygun esnek mimari) */
+                .hexagon-grid {
+                    display: flex;
+                    gap: 2px;
+                    margin: 0 -2px;
+                    padding: 15px;
+                    justify-content: center;
+                    overflow-x: auto;
+                    padding-bottom: 40px;
+                    /* Mobilde taşma payı */
+                }
+
+                .hexagon-column {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    margin: 0 -2px;
+                    gap: 2px;
+                }
+
+                .hexagon-column:nth-child(even) {
+                    padding-top: 48.3px;
+                    /* 3D efekt ve boyut artışından dolayı boşluk genişletildi */
+                }
+
+                .hexagon-wrapper {
+                    position: relative;
+                    width: 110px;
+                    height: 95.3px;
+                    margin: 0 -10px;
+                    cursor: pointer;
+                    transition: transform 0.2s ease, filter 0.2s ease;
+                }
+
+                .hexagon-wrapper:hover {
+                    transform: scale(1.05);
+                    z-index: 5;
+                }
+
+                .hexagon-wrapper.loading {
+                    pointer-events: none;
+                    opacity: 0.5;
+                    filter: grayscale(100%);
+                }
+
+                .hexagon {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: radial-gradient(circle at 30% 30%, #fbbf24 0%, #d97706 70%);
+                    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-size: 2.5rem;
+                    font-weight: 900;
+                    color: #fff;
+                    text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.5);
+                    box-shadow: inset 0px 5px 10px rgba(255, 255, 255, 0.4), inset 0px -5px 10px rgba(0, 0, 0, 0.3);
+                    transition: all 0.3s ease;
+                }
+
+                /* 3D Kenar (Bordür) illüzyonu için pseudo-element */
+                .hexagon::after {
+                    content: '';
+                    position: absolute;
+                    inset: 4px;
+                    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                }
+
+                /* Durum Renkleri (Doğru/Yanlış) */
+                .hexagon.green {
+                    background: radial-gradient(circle at 30% 30%, #4ade80 0%, #166534 80%);
+                }
+
+                .hexagon.blue {
+                    background: radial-gradient(circle at 30% 30%, #60a5fa 0%, #1e3a8a 80%);
+                }
+
+                .hexagon.highlight {
+                    box-shadow: inset 0 0 0 4px #fef08a, 0 0 20px 5px rgba(253, 224, 71, 0.6) !important;
+                    animation: pulseGlow 1.5s infinite alternate;
+                }
+
+                @keyframes pulseGlow {
+                    from {
+                        box-shadow: 0 0 10px rgba(253, 224, 71, 0.4);
+                    }
+
+                    to {
+                        box-shadow: 0 0 25px rgba(253, 224, 71, 0.9);
+                    }
+                }
+
+                @keyframes winningPulse {
+                    0% {
+                        filter: hue-rotate(0deg) brightness(1.2);
+                        transform: scale(1.1);
+                    }
+
+                    50% {
+                        filter: hue-rotate(180deg) brightness(1.5);
+                    }
+
+                    100% {
+                        filter: hue-rotate(360deg) brightness(1.2);
+                        transform: scale(1.1);
+                    }
+                }
+
+                .hexagon.win-path {
+                    animation: winningPulse 1.5s infinite alternate;
+                    z-index: 10;
+                    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.5);
+                    border: 2px solid #fff;
+                }
+
+                @keyframes winningPulse {
+                    0% {
+                        transform: scale(1);
+                        filter: brightness(1);
+                        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5), inset 0 0 5px rgba(255, 255, 255, 0.3);
+                    }
+
+                    100% {
+                        transform: scale(1.15);
+                        filter: brightness(1.5);
+                        box-shadow: 0 0 30px rgba(255, 215, 0, 1), inset 0 0 15px rgba(255, 255, 255, 0.8);
+                        border-color: #fff;
+                    }
+                }
+
+                /* Modal Özelleştirmesi */
+                .beecomb-modal {
+                    background: rgba(15, 23, 42, 0.85);
+                    backdrop-filter: blur(15px);
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 20px;
+                }
+            </style>
+
+            <!-- Üst Bilgi Barı (Banner Görselli) -->
+            <div class="beecomb-top-bar"
+                style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: flex-end; padding: 15px 20px; border-radius: 12px; background-image: url('https://raw.githubusercontent.com/gameduc/gamedu/main/game%20pics/petek%20belge.png'); background-size: cover; background-position: left center; background-repeat: no-repeat; min-height: 120px; border-bottom: 3px solid #eab308; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+
+                <!-- Dropdown'lar (Alt Alta) -->
+                <div
+                    style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 12px; backdrop-filter: blur(5px);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <label for="beeTopGradeSelect"
+                            style="color: #fff; font-size: 0.9rem; font-weight:bold;">Sınıf:</label>
+                        <select id="beeTopGradeSelect"
+                            style="background: rgba(255,255,255,0.9); color: #000; border: 1px solid rgba(255,255,255,0.2); padding: 4px; border-radius: 5px; width: 140px; font-weight: bold;">
+                            <option value="5" style="color:#000;">5</option>
+                            <option value="6" style="color:#000;">6</option>
+                            <option value="7" style="color:#000;">7</option>
+                            <option value="8" style="color:#000;">8</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <label for="beeTopLessonSelect"
+                            style="color: #fff; font-size: 0.9rem; font-weight:bold;">Ders:</label>
+                        <select id="beeTopLessonSelect"
+                            style="background: rgba(255,255,255,0.9); color: #000; border: 1px solid rgba(255,255,255,0.2); padding: 4px; border-radius: 5px; width: 140px; font-weight: bold;">
+                            <option value="Random" style="color:#000;">Tümü / Rastgele</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Kontroller (Alt Alta: AutoGrade ve CheckWin) -->
+                <div
+                    style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 12px; align-items: flex-start; backdrop-filter: blur(5px);">
+                    <label
+                        style="color: #fff; font-size: 0.95rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="beeAutoGradeProgress" checked
+                            style="width: 18px; height: 18px; cursor: pointer;">
+                        Auto Grade
+                    </label>
+                    <button id="beeCheckWinBtn" class="login-btn"
+                        style="background: #3b82f6; padding: 6px 15px; font-size: 0.9rem; border-radius: 6px; width: 100%; font-weight: bold;">Zafer
+                        Kontrolü</button>
+                </div>
+
+                <!-- Puanlar (Alt Alta) -->
+                <div class="beecomb-counts"
+                    style="display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 12px; backdrop-filter: blur(5px);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;"><span
+                            class="bee-blue-txt" style="font-weight: bold; color: #93c5fd;">Mavi:</span> <span
+                            id="beeBlueCount" style="color: white; font-weight: bold; font-size: 1.1rem;">0</span></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;"><span
+                            class="bee-green-txt" style="font-weight: bold; color: #86efac;">Yeşil:</span> <span
+                            id="beeGreenCount" style="color: white; font-weight: bold; font-size: 1.1rem;">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Petek Oyun Alanı Dinamik Yükleme -->
+            <div class="game-content-card"
+                style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1rem; box-shadow: inset 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 2rem;">
+                <div class="hexagon-grid" id="beeHexagonGrid">
+                    <!-- JS Grid'i Buraya Çizecek -->
+                </div>
+            </div>
+
+            <!-- BeeComb Soru Modalı -->
+            <div id="beeQuestionModal" class="modal"
+                style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); justify-content: center; align-items: center;">
+                <div class="modal-content beecomb-modal"
+                    style="padding: 30px; width: 90%; max-width: 600px; text-align: center; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                    <span id="beeCloseModal"
+                        style="position: absolute; top: 15px; right: 20px; font-size: 2rem; cursor: pointer; color: #aaa;">&times;</span>
+                    <h2 style="margin-top: 0; color: #fbbf24; font-size: 2rem;">Hangi <span id="beeModalHexagonLetter"
+                            style="background: #fff; color: #d97706; padding: 2px 10px; border-radius: 8px;"></span>
+                    </h2>
+                    <p id="beeQuestionText"
+                        style="font-size: 1.4rem; line-height: 1.6; margin: 25px 0; font-weight: 500;"></p>
+
+                    <div style="display: flex; justify-content: center; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
+                        <div>
+                            <label for="beeModalGradeSelect"
+                                style="color: #cbd5e1; font-size: 1rem; font-weight:bold;">Seviye:</label>
+                            <select id="beeModalGradeSelect"
+                                style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 5px;">
+                                <option value="5" style="color:#000;">5</option>
+                                <option value="6" style="color:#000;">6</option>
+                                <option value="7" style="color:#000;">7</option>
+                                <option value="8" style="color:#000;">8</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="beeModalLessonSelect"
+                                style="color: #cbd5e1; font-size: 1rem; font-weight:bold;">Ders:</label>
+                            <select id="beeModalLessonSelect"
+                                style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 5px;">
+                                <option value="Random" style="color:#000;">Tümü / Rastgele</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 30px;">
+                        <button id="beeGreenBtn" class="login-btn"
+                            style="background: #4ade80; color: #064e3b; flex: 1; min-width: 120px; font-weight: bold;">Yeşil</button>
+                        <button id="beeBlueBtn" class="login-btn"
+                            style="background: #60a5fa; color: #1e3a8a; flex: 1; min-width: 120px; font-weight: bold;">Mavi</button>
+                        <button id="beeChangeQuestionBtn" class="login-btn"
+                            style="background: #64748b; flex: 1; min-width: 120px;">Soruyu Değiştir</button>
+                        <button id="beeCountdownBtn" class="login-btn"
+                            style="background: #ef4444; flex: 1; min-width: 120px;">5sn Süre</button>
+                    </div>
+                    <div id="beeCountdownDisplay"
+                        style="font-size: 2.5rem; font-weight: bold; color: #ef4444; margin-top: 20px;"></div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 1rem; display: flex; justify-content: center; gap: 15px;">
+                <button id="beeNewGameBtn" class="login-btn"
+                    style="background: #10b981; border: 1px solid var(--glass-border); padding: 12px 30px; color: white;">Yeni
+                    Oyun</button>
+                <button id="beeBackToLobbyBtn" class="login-btn"
+                    style="background: transparent; border: 1px solid var(--glass-border); padding: 12px 30px; color: white;">Ana
+                    Sayfaya Dön</button>
             </div>
         </section>
 
     </main>
-
-    <!-- Ortak Modüller ve Mimari Bağlamları -->
     <script src="./config.js"></script>
     <script src="./js/app.js"></script>
+    <script src="./js/bang.js"></script>
+    <script src="./js/lingo.js"></script>
+    <script src="./js/beecomb.js"></script>
 </body>
 
 </html>
