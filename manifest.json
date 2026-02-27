@@ -1,6 +1,6 @@
 {
-  "name": "Eğitim Oyunları Portalı",
-  "short_name": "Eğitim Oyunları",
+  "name": "GamEdu - Eğitim Oyunları",
+  "short_name": "GamEdu",
   "description": "Öğretmen ve öğrenciler için modüler, çoklu oyun platformu.",
   "start_url": "./index.html",
   "display": "standalone",
