@@ -13,6 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.style.setProperty('--accent-color', AppConfig.ui.primaryColor);
     }
     loadGames();
+
+    // Yeniden Başlat Butonu Event Listener (Aynı ayarlarla Setup'ı tetikler)
+    const restartGameBtn = document.getElementById('restartGameBtn');
+    if (restartGameBtn) {
+        restartGameBtn.addEventListener('click', () => {
+            restartGameBtn.textContent = 'Başlatılıyor...';
+            const startBtn = document.getElementById('startGameBtn');
+            if (startBtn) {
+                startBtn.click(); // Gizli olan setup formunu tekrar ateşler
+            }
+        });
+    }
 });
 
 function loadGames() {
@@ -56,8 +68,15 @@ function renderGames(games, statusContainer, gamesGrid) {
         }
 
         // Sheet'ten hem SheetTabName hem ConfigSheetName, Config'ten id veya configSheet gelebilir
-        const configSheet = game.configSheet || game.ConfigSheetName || game.SheetTabName;
-        const redirectUrl = game.redirectUrl || game.RedirectUrl;
+        let configSheet = game.configSheet || game.ConfigSheetName || game.SheetTabName;
+        let redirectUrl = game.redirectUrl || game.RedirectUrl;
+
+        // BeeComb SPA Yaması (Veritabanında eski URL kalmışsa bile SPA'ya zorla)
+        const gameId = String(game.id || game.GameName || '').toLowerCase();
+        if (gameId === 'beecomb') {
+            redirectUrl = null;
+            configSheet = "BeeComb_Config";
+        }
 
         let badgeText = redirectUrl ? 'Dış Bağlantı' : 'Modüler Oyun';
 
@@ -89,6 +108,46 @@ function showError(error, statusContainer) {
 }
 
 function launchGame(game, configSheet, redirectUrl) {
+    const gameId = String(game.id || game.GameName || '').toLowerCase();
+
+    // BEECOMB ÖZEL YAMASI (Ayar Sayfası Yok - Direkt Başlat)
+    if (gameId === 'beecomb') {
+        document.getElementById('welcomeHero').style.display = 'none';
+        document.getElementById('gamesListArea').style.display = 'none';
+
+        // Setup alanını hiç göstermeden butona basılmış gibi arka planda API tetikliyoruz
+        const formData = {
+            GameType: 'beecomb',
+            ClassGrade: 'all',  // Auto-grade yapabilmek için tüm soruları RAM'e çekmeliyiz
+            Lessons: 'Random'   // Seçili ders offline olarak sonradan filtrelenecek
+        };
+
+        const apiUrlStart = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
+        if (apiUrlStart && apiUrlStart.trim() !== '') {
+            fetch(apiUrlStart, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'startGame', formData: formData }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            })
+                .then(res => res.json())
+                .then(response => {
+                    if (response.error) {
+                        showOzelAlert("Kurulum Hatası: " + response.error, "hata");
+                    } else {
+                        currentLoadedGame = game;
+                        const beeCombGameArea = document.getElementById('beeCombGameArea');
+                        beeCombGameArea.style.display = 'block';
+                        beeCombGameArea.classList.remove('hidden-spa-module');
+                        BeeCombEngine.init(response.gameConfig || formData);
+                    }
+                })
+                .catch(error => {
+                    showOzelAlert("BeeComb başlatılırken bağlantı hatası: " + error, "hata");
+                });
+        }
+        return;
+    }
+
     // SPA Mimarisine Geçiş (Faz 2 Hazırlığı)
     // 1- Eğer oyunun bir Config Sheet'i varsa ÖNCELİKLE SPA içindeki Setup ekranını aç
     if (configSheet && configSheet.trim() !== '') {
@@ -246,32 +305,96 @@ function populateSetupForm(config) {
                 });
                 break;
 
+            case 'toggle':
+                inputElement = document.createElement('div');
+                inputElement.className = 'toggle-container';
+                inputElement.style.cssText = "display: flex; align-items: center; position: relative; background: rgba(0,0,0,0.2); border-radius: 30px; padding: 4px; border: 1px solid var(--glass-border); cursor: pointer; user-select: none; width: max-content; margin-top: 5px;";
+
+                const toggleOptions = setting.OptionsSource ? setting.OptionsSource.split(',') : ['Sıralı', 'Blok'];
+                const val0 = toggleOptions[0] ? toggleOptions[0].trim() : 'Sıralı';
+                const val1 = toggleOptions[1] ? toggleOptions[1].trim() : 'Blok';
+                const isDefaultVal1 = (setting.DefaultValue == val1);
+
+                // Gizli input (Backend'in veriyi okuyabilmesi için)
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = setting.SettingName;
+                hiddenInput.name = setting.SettingName;
+                hiddenInput.value = isDefaultVal1 ? val1 : val0;
+
+                const slider = document.createElement('div');
+                slider.className = 'toggle-slider';
+                slider.style.cssText = `position: absolute; top: 4px; bottom: 4px; width: calc(50% - 4px); background: #3b82f6; border-radius: 25px; z-index: 1; transition: 0.3s; left: ${isDefaultVal1 ? '50%' : '4px'};`;
+
+                const opt0 = document.createElement('div');
+                opt0.textContent = val0;
+                opt0.style.cssText = `padding: 8px 24px; z-index: 2; transition: 0.3s; font-weight: bold; font-size: 0.9rem; text-align: center; flex: 1; color: ${isDefaultVal1 ? 'var(--text-muted)' : '#fff'};`;
+
+                const opt1 = document.createElement('div');
+                opt1.textContent = val1;
+                opt1.style.cssText = `padding: 8px 24px; z-index: 2; transition: 0.3s; font-weight: bold; font-size: 0.9rem; text-align: center; flex: 1; color: ${isDefaultVal1 ? '#fff' : 'var(--text-muted)'};`;
+
+                inputElement.appendChild(slider);
+                inputElement.appendChild(opt0);
+                inputElement.appendChild(opt1);
+                inputElement.appendChild(hiddenInput);
+
+                inputElement.addEventListener('click', () => {
+                    if (hiddenInput.value === val0) {
+                        hiddenInput.value = val1;
+                        slider.style.left = '50%';
+                        opt0.style.color = "var(--text-muted)";
+                        opt1.style.color = "#fff";
+                    } else {
+                        hiddenInput.value = val0;
+                        slider.style.left = '4px';
+                        opt0.style.color = "#fff";
+                        opt1.style.color = "var(--text-muted)";
+                    }
+                });
+                break;
+
             case 'dynamic-dropdown':
                 inputElement = document.createElement('select');
                 inputElement.id = setting.SettingName;
                 inputElement.name = setting.SettingName;
-                inputElement.innerHTML = '<option value="">Yükleniyor...</option>';
-                // SPA Fetch API Entegrasyonu
-                const apiUrlDd = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
-                if (apiUrlDd && apiUrlDd.trim() !== '') {
-                    fetch(`${apiUrlDd}?api=true&action=getUniqueUnits&optionsSource=${encodeURIComponent(setting.OptionsSource)}`)
-                        .then(res => res.json())
-                        .then(units => {
-                            inputElement.innerHTML = '';
-                            if (!units.error && Array.isArray(units)) {
-                                units.forEach(unit => {
-                                    const option = document.createElement('option');
-                                    option.value = unit; option.textContent = unit;
-                                    if (unit == setting.DefaultValue) option.selected = true;
-                                    inputElement.appendChild(option);
-                                });
-                            } else {
-                                inputElement.innerHTML = '<option value="">Bulunamadı</option>';
-                            }
-                        })
-                        .catch(err => {
-                            inputElement.innerHTML = '<option value="">Hata</option>';
-                        });
+
+                // HIZLANDIRMA (FAST-PATH): Eğer Config içerisinde Min ve Max önceden sabit girilmişse, API beklemeden anında yükle!
+                if (setting.Min !== undefined && setting.Max !== undefined && setting.Min !== "" && setting.Max !== "") {
+                    const minVal = parseInt(setting.Min);
+                    const maxVal = parseInt(setting.Max);
+                    for (let i = minVal; i <= maxVal; i++) {
+                        const option = document.createElement('option');
+                        option.value = i;
+                        option.textContent = i;
+                        if (i == setting.DefaultValue) option.selected = true;
+                        inputElement.appendChild(option);
+                    }
+                } else {
+                    // Eğer Min ve Max yoksaydı ve mutlaka WordsPool'dan tekil sayılar aranacaksa eski yavaş API metoduna dön.
+                    inputElement.innerHTML = '<option value="">Yükleniyor...</option>';
+                    // SPA Fetch API Entegrasyonu
+                    const apiUrlDd = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
+                    if (apiUrlDd && apiUrlDd.trim() !== '') {
+                        fetch(`${apiUrlDd}?api=true&action=getUniqueUnits&optionsSource=${encodeURIComponent(setting.OptionsSource)}`)
+                            .then(res => res.json())
+                            .then(units => {
+                                inputElement.innerHTML = '';
+                                if (!units.error && Array.isArray(units)) {
+                                    units.forEach(unit => {
+                                        const option = document.createElement('option');
+                                        option.value = unit; option.textContent = unit;
+                                        if (unit == setting.DefaultValue) option.selected = true;
+                                        inputElement.appendChild(option);
+                                    });
+                                } else {
+                                    inputElement.innerHTML = '<option value="">Bulunamadı</option>';
+                                }
+                            })
+                            .catch(err => {
+                                inputElement.innerHTML = '<option value="">Hata</option>';
+                            });
+                    }
                 }
                 break;
 
@@ -323,10 +446,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
             }
-
             const startBtnText = startBtn.textContent;
             startBtn.textContent = 'Başlatılıyor...';
             startBtn.disabled = true;
+
+            // Oyun tipini ekle (Lingo veya Bang) - Backend bu sayede oyunu tanıyıp gereksiz listeleri çalıştırmaz
+            formData.GameType = currentLoadedGame ? (currentLoadedGame.id || currentLoadedGame.GameName) : 'bang';
 
             const apiUrlStart = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
             if (apiUrlStart && apiUrlStart.trim() !== '') {
@@ -343,19 +468,33 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (response.error) {
                             showOzelAlert("Kurulum Hatası: " + response.error, "hata");
                         } else {
-                            // Setup alanını gizle, Oyun Alanını Göster
-                            document.getElementById('setupArea').style.display = 'none';
-
-                            const gameArea = document.getElementById('gameArea');
-                            gameArea.style.display = 'block';
-                            gameArea.classList.remove('hidden-spa-module');
-
-                            // Üst Bar başlığını oyun ismi ile güncelle
-                            document.getElementById('playingGameTitle').textContent = currentLoadedGame ? (currentLoadedGame.name || currentLoadedGame.GameName) : 'Oyun';
-
                             // API'nin ürettiği canli oyun sekmesini (Game_...) kaydet
                             currentGameSessionSheet = response.gameSheetName;
-                            loadInitialGameState(response.gameSheetName); // Doğru state'i yükle
+
+                            document.getElementById('setupArea').style.display = 'none';
+
+                            if (currentLoadedGame && currentLoadedGame.id === "lingo") {
+                                // Lingo Oyun Ekranı
+                                const lingoGameArea = document.getElementById('lingoGameArea');
+                                lingoGameArea.style.display = 'block';
+                                lingoGameArea.classList.remove('hidden-spa-module');
+                                document.getElementById('lingoPlayingGameTitle').textContent = currentLoadedGame.name || 'Lingo';
+                                // Lingo oyunu için ayrı bir yükleme (Kelimeler bir kere gelecek)
+                                loadInitialLingoState(response.gameSheetName);
+                            } else if (currentLoadedGame && currentLoadedGame.id === "beecomb") {
+                                // BeeComb Oyun Ekranı
+                                const beeCombGameArea = document.getElementById('beeCombGameArea');
+                                beeCombGameArea.style.display = 'block';
+                                beeCombGameArea.classList.remove('hidden-spa-module');
+                                BeeCombEngine.init(response.gameConfig);
+                            } else {
+                                // Varsayılan Bang Oyun Ekranı
+                                const gameArea = document.getElementById('gameArea');
+                                gameArea.style.display = 'block';
+                                gameArea.classList.remove('hidden-spa-module');
+                                document.getElementById('playingGameTitle').textContent = currentLoadedGame ? (currentLoadedGame.name || currentLoadedGame.GameName) : 'Oyun';
+                                loadInitialGameState(response.gameSheetName);
+                            }
                         }
                     })
                     .catch(error => {
@@ -392,25 +531,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- OYUN ALANI (GAME AREA) YARDIMCI FONKSİYONLARI ---
 
-function loadInitialGameState(sheetName) {
-    const apiUrlLoad = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
-    if (apiUrlLoad && apiUrlLoad.trim() !== '') {
-        fetch(`${apiUrlLoad}?api=true&action=getInitialGameState&sheetName=${encodeURIComponent(sheetName)}`)
-            .then(res => res.json())
-            .then(state => {
-                if (state.error) {
-                    showOzelAlert("Oyun yüklenemedi: " + state.error, "hata");
-                    return;
-                }
-                updateGameUI(state);
-            })
-            .catch(error => {
-                showOzelAlert("Bağlantı hatası: " + error, "hata");
-            });
-    } else {
-        showOzelAlert("API adresi tanımsız. Lütfen config.js içindeki apiBaseUrl değerini girin.", "hata");
-    }
-}
 
 // Lobi Ekranına (Ana Ekrana) SPA Geçişi
 function goToLobby() {
@@ -420,166 +540,15 @@ function goToLobby() {
     const gameArea = document.getElementById('gameArea');
     if (gameArea) gameArea.style.display = 'none';
 
+    const lingoGameArea = document.getElementById('lingoGameArea');
+    if (lingoGameArea) lingoGameArea.style.display = 'none';
+
     const welcomeHero = document.getElementById('welcomeHero');
     if (welcomeHero) welcomeHero.style.display = 'block';
 
     const gamesListArea = document.getElementById('gamesListArea');
     if (gamesListArea) gamesListArea.style.display = 'block';
 }
-
-function updateGameUI(state) {
-    if (!state) return;
-
-    document.getElementById('winningPointsDisplay').textContent = state.winningPoints || 0;
-
-    const wordDisplay = document.getElementById('currentWordDisplay');
-    wordDisplay.textContent = state.currentWord || 'Kelime Bekleniyor...';
-
-    // Grupların skoru ve kutuları
-    const groupScoresContainer = document.getElementById('groupScores');
-    const activeGroupDropdown = document.getElementById('activeGroupDropdown');
-
-    groupScoresContainer.innerHTML = '';
-    activeGroupDropdown.innerHTML = '';
-
-    if (state.groupNames && Array.isArray(state.groupNames)) {
-        state.groupNames.forEach(gName => {
-            // Dropdown seçenekleri
-            const opt = document.createElement('option');
-            opt.value = gName;
-            opt.textContent = gName;
-            if (gName === state.activeGroup) opt.selected = true;
-            activeGroupDropdown.appendChild(opt);
-
-            // Score box
-            const box = document.createElement('div');
-            box.className = 'group-box ' + (gName === state.activeGroup ? 'active' : '');
-
-            box.innerHTML = `
-                <span class="group-name">${gName}</span>
-                <span class="group-score">${state.scores ? (state.scores[gName] || 0) : 0}</span>
-            `;
-            groupScoresContainer.appendChild(box);
-        });
-    }
-
-    // Kelime Stilleri (Bang vs)
-    wordDisplay.className = '';
-    wordDisplay.classList.add('word-base');
-    const wordInfo = document.getElementById('wordInfo');
-
-    if (state.currentWordIsGameInWord) {
-        wordDisplay.classList.remove('word-base', 'word-repeated');
-        switch (state.currentWord) {
-            case 'BANG!':
-                wordDisplay.classList.add('word-bang');
-                break;
-            case 'Give +1 Right':
-            case 'Give +1 Left':
-                wordDisplay.classList.add('word-give');
-                break;
-            case 'Take +1 Right':
-            case 'Take +1 Left':
-                wordDisplay.classList.add('word-take');
-                break;
-        }
-        if (wordInfo) wordInfo.textContent = '';
-    } else if (state.currentWordIsRepeated) {
-        wordDisplay.classList.remove('word-base');
-        wordDisplay.classList.add('word-repeated');
-        if (wordInfo) wordInfo.textContent = 'Bu kelime daha önce kullanıldı!';
-    } else {
-        if (wordInfo) wordInfo.textContent = '';
-    }
-
-    // Mesajlar ve Oyun Sonu
-    const gameMessageDiv = document.getElementById('gameMessage');
-    if (gameMessageDiv) gameMessageDiv.textContent = state.message || '';
-
-    const gameOverDiv = document.getElementById('gameOverMessage');
-    const newGameBtn = document.getElementById('newGameBtn');
-
-    if (gameOverDiv) {
-        if (state.gameEnded) {
-            gameOverDiv.textContent = state.winner ? `${state.winner} KAZANDI!` : 'Oyun Bitti!';
-            gameOverDiv.style.display = 'block';
-            if (newGameBtn) newGameBtn.style.display = 'inline-block';
-        } else {
-            gameOverDiv.style.display = 'none';
-            if (newGameBtn) newGameBtn.style.display = 'none';
-        }
-    }
-}
-
-// OYUN ALANI (GAME AREA) ETKİLEŞİM FONKSİYONU
-function handleGameAction(actionType) {
-    const activeGroupSelect = document.getElementById('activeGroupDropdown');
-    const activeGroup = activeGroupSelect ? activeGroupSelect.value : '';
-
-    // Config sayfası değil, o an oynanan canlı oyun (özel id'li sekme) kullanılmalı
-    const gameSheetToCall = currentGameSessionSheet;
-
-    const apiUrlAction = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
-    if (apiUrlAction && apiUrlAction.trim() !== '') {
-        fetch(apiUrlAction, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'processGameAction', sheetName: gameSheetToCall, actionType: actionType, activeGroup: activeGroup }),
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-        })
-            .then(res => res.json())
-            .then(state => {
-                if (state.error) {
-                    showOzelAlert("Sunucu Hatası: " + state.error, "hata");
-                    return;
-                }
-                updateGameUI(state);
-            })
-            .catch(error => {
-                showOzelAlert("Bağlantı hatası: " + error, "hata");
-            });
-    } else {
-        showOzelAlert(`Test Ortamı: ${actionType} işlemi backend'e iletilemedi.`, "bilgi");
-    }
-}
-
-// OYUN İÇİ BUTONLARA EVENT LISTENER'LARIN EKLENMESİ
-document.addEventListener('DOMContentLoaded', () => {
-    const IDs = {
-        'plusBtn': 'plus',
-        'minusBtn': 'minus',
-        'actionBtn': 'action',
-        'changeWordBtn': 'changeWord'
-    };
-
-    for (let [btnId, action] of Object.entries(IDs)) {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.addEventListener('click', () => handleGameAction(action));
-        }
-    }
-
-    const backToSetup = document.getElementById('backToSetupBtn');
-    if (backToSetup) {
-        backToSetup.addEventListener('click', () => {
-            // Confirm yapmadan önce uyar! 
-            showOzelAlert("Ayarlara dönerseniz mevcut oyun sıfırlanabilir. Emin misiniz?", "evethayir", (isConfirmed) => {
-                if (isConfirmed) {
-                    document.getElementById('gameArea').style.display = 'none';
-                    document.getElementById('setupArea').style.display = 'block';
-                }
-            });
-        });
-    }
-
-    const newGameBtn = document.getElementById('newGameBtn');
-    if (newGameBtn) {
-        newGameBtn.addEventListener('click', () => {
-            document.getElementById('gameArea').style.display = 'none';
-            document.getElementById('setupArea').style.display = 'block';
-        });
-    }
-});
-
 /* Sistem Mesajları Kuralı: showOzelAlert Uygulaması */
 function showOzelAlert(message, type, callback = null) {
     const overlay = document.getElementById('ozelAlertOverlay');
