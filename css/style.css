@@ -285,13 +285,28 @@ body {
     border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 2rem;
-    max-width: 400px;
+    max-width: 700px; /* Genişletildi */
     width: 90%;
+    max-height: 80vh; /* Ekran yüksekliğine oranla sınır */
+    overflow-y: auto; /* Dikey kaydırma */
     text-align: center;
     transform: scale(0.9);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(15px);
+}
+
+/* Scrollbar Tasarımı (Modal İçi) */
+.ozel-alert-box::-webkit-scrollbar {
+    width: 6px;
+}
+.ozel-alert-box::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+.ozel-alert-box::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 10px;
 }
 
 .ozel-alert-overlay.active .ozel-alert-box {
@@ -307,7 +322,8 @@ body {
     font-size: 1.1rem;
     color: #fff;
     margin-bottom: 1.5rem;
-    line-height: 1.5;
+    line-height: 1.6;
+    text-align: left; /* Sola hizalama */
 }
 
 .ozel-alert-buttons {
