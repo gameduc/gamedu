@@ -1,10 +1,12 @@
 // Service Worker Kaydı (PWA Desteği İçin)
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && (window.location.protocol === 'http:' || window.location.protocol === 'https:')) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('Service Worker Registered!', reg))
             .catch(err => console.error('Service Worker Registration Failed!', err));
     });
+} else {
+    console.log("Service Worker registration skipped (running via file:// protocol).");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -89,7 +91,16 @@ function renderGames(games, statusContainer, gamesGrid) {
             <div class="play-icon" style="${game.themeColor ? 'background:' + game.themeColor : ''}">
                 <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
+            <button class="info-btn" title="Nasıl Oynanır?" style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; color: #fff; width: 35px; height: 35px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.3s ease;">?</button>
         `;
+
+        const infoBtn = card.querySelector('.info-btn');
+        if (infoBtn) {
+            infoBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showOzelAlert(game.howToPlay || 'Nasıl oynanacağı yakında eklenecek.', 'bilgi');
+            });
+        }
 
         card.addEventListener('click', () => launchGame(game, configSheet, redirectUrl));
         gamesGrid.appendChild(card);
@@ -99,11 +110,11 @@ function renderGames(games, statusContainer, gamesGrid) {
 function showError(error, statusContainer) {
     statusContainer.style.display = 'block';
     statusContainer.innerHTML = `
-        <div style="color: #ef4444; margin-bottom: 10px;">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        </div>
-        <p>Oyunlar yüklenirken bir hata oluştu: <br>${error}</p>
-    `;
+    < div style = "color: #ef4444; margin-bottom: 10px;" >
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div >
+    <p>Oyunlar yüklenirken bir hata oluştu: <br>${error}</p>
+`;
     console.error("Hata:", error);
 }
 
@@ -442,15 +453,79 @@ function loadGameSetup(game, configSheet) {
         }
     }
     else if (game.id === 'dictionary') {
-        const dictConfig = [
-            { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
-            { SettingName: "WinTarget", DisplayName: "Kazanma Hedefi (Kaç Kelime)", Type: "number", DefaultValue: 3, Min: 1, Max: 10 },
-            { SettingName: "DictClass", DisplayName: "Sınıf / Kademe (Opsiyonel)", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise,2. Sınıf,3. Sınıf,4. Sınıf,5. Sınıf,6. Sınıf,7. Sınıf,8. Sınıf,9. Sınıf,10. Sınıf,11. Sınıf,12. Sınıf", DefaultValue: "Tümü" },
-            { SettingName: "DictLesson", DisplayName: "Ders (Opsiyonel)", Type: "dropdown", OptionsSource: "Tümü,İngilizce,Almanca", DefaultValue: "Tümü" },
-            { SettingName: "DictUnitStart", DisplayName: "Başlangıç Ünitesi", Type: "number", DefaultValue: 1, Min: 1, Max: 50 },
-            { SettingName: "DictUnitEnd", DisplayName: "Bitiş Ünitesi", Type: "number", DefaultValue: 10, Min: 1, Max: 50 }
-        ];
-        populateSetupForm(dictConfig);
+        const setupFormObj = document.getElementById('dynamicSetupForm');
+        setupFormObj.innerHTML = '<p style="color:white; text-align:center;">WordsPool Veritabanından Kademe ve Ders Seçenekleri Yükleniyor...</p>';
+
+        const apiUrl = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
+        if (apiUrl && apiUrl.trim() !== '') {
+            fetch(`${apiUrl}?api=true&action=getDictionaryOptions`)
+                .then(res => res.json())
+                .then(opt => {
+                    const classes = ["Tümü", ...(opt.classes || [])];
+                    const lessons = ["Tümü", ...(opt.lessons || [])];
+
+                    const dictConfig = [
+                        { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
+                        { SettingName: "WinTarget", DisplayName: "Kazanma Hedefi (Kaç Kelime)", Type: "number", DefaultValue: 3, Min: 1, Max: 10 },
+                        { SettingName: "UseCustomNames", DisplayName: "Özel Grup/Öğrenci İsimleri", Type: "toggle", OptionsSource: "Hayır,Evet", DefaultValue: "Hayır" },
+                        { SettingName: "CustomGroupNames", DisplayName: "İsimler (Virgüllerle Ayrılmış)", Type: "text", DefaultValue: "Örn: Ali, Ayşe, Fatma" },
+                        { SettingName: "DictClass", DisplayName: "Sınıf / Kademe (Opsiyonel)", Type: "dropdown", OptionsSource: classes.join(','), DefaultValue: "Tümü" },
+                        { SettingName: "DictLesson", DisplayName: "Ders (Opsiyonel)", Type: "dropdown", OptionsSource: lessons.join(','), DefaultValue: "Tümü" },
+                        { SettingName: "DictUnitStart", DisplayName: "Başlangıç Ünitesi", Type: "number", DefaultValue: 1, Min: 1, Max: 50 },
+                        { SettingName: "DictUnitEnd", DisplayName: "Bitiş Ünitesi", Type: "number", DefaultValue: 10, Min: 1, Max: 50 }
+                    ];
+                    populateSetupForm(dictConfig);
+                    bindDictionaryCustomNamesToggle();
+                })
+                .catch(e => {
+                    showOzelAlert("Seçenekler (Kademe, Ders vb.) okunurken bağlantı sorunu oluştu.", "hata");
+                    const dictConfigFallback = [
+                        { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
+                        { SettingName: "WinTarget", DisplayName: "Kazanma Hedefi (Kaç Kelime)", Type: "number", DefaultValue: 3, Min: 1, Max: 10 },
+                        { SettingName: "UseCustomNames", DisplayName: "Özel Grup/Öğrenci İsimleri", Type: "toggle", OptionsSource: "Hayır,Evet", DefaultValue: "Hayır" },
+                        { SettingName: "CustomGroupNames", DisplayName: "İsimler (Virgüllerle Ayrılmış)", Type: "text", DefaultValue: "Örn: Ali, Ayşe, Fatma" },
+                        { SettingName: "DictClass", DisplayName: "Sınıf / Kademe (Opsiyonel)", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
+                        { SettingName: "DictLesson", DisplayName: "Ders (Opsiyonel)", Type: "dropdown", OptionsSource: "Tümü,İngilizce,Almanca", DefaultValue: "Tümü" },
+                        { SettingName: "DictUnitStart", DisplayName: "Başlangıç Ünitesi", Type: "number", DefaultValue: 1, Min: 1, Max: 50 },
+                        { SettingName: "DictUnitEnd", DisplayName: "Bitiş Ünitesi", Type: "number", DefaultValue: 10, Min: 1, Max: 50 }
+                    ];
+                    populateSetupForm(dictConfigFallback);
+                    bindDictionaryCustomNamesToggle();
+                });
+        } else {
+            const dictConfigFallback = [
+                { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
+                { SettingName: "WinTarget", DisplayName: "Kazanma Hedefi (Kaç Kelime)", Type: "number", DefaultValue: 3, Min: 1, Max: 10 },
+                { SettingName: "UseCustomNames", DisplayName: "Özel Grup/Öğrenci İsimleri", Type: "toggle", OptionsSource: "Hayır,Evet", DefaultValue: "Hayır" },
+                { SettingName: "CustomGroupNames", DisplayName: "İsimler (Virgüllerle Ayrılmış)", Type: "text", DefaultValue: "Örn: Ali, Ayşe, Fatma" },
+                { SettingName: "DictClass", DisplayName: "Sınıf / Kademe (Opsiyonel)", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
+                { SettingName: "DictLesson", DisplayName: "Ders (Opsiyonel)", Type: "dropdown", OptionsSource: "Tümü,İngilizce,Almanca", DefaultValue: "Tümü" },
+                { SettingName: "DictUnitStart", DisplayName: "Başlangıç Ünitesi", Type: "number", DefaultValue: 1, Min: 1, Max: 50 },
+                { SettingName: "DictUnitEnd", DisplayName: "Bitiş Ünitesi", Type: "number", DefaultValue: 10, Min: 1, Max: 50 }
+            ];
+            populateSetupForm(dictConfigFallback);
+            bindDictionaryCustomNamesToggle();
+        }
+
+        function bindDictionaryCustomNamesToggle() {
+            setTimeout(() => {
+                const toggleInp = document.getElementById('UseCustomNames');
+                const textInp = document.getElementById('CustomGroupNames');
+                if (toggleInp && textInp) {
+                    const textGroup = textInp.closest('.form-group');
+                    const updateVisibility = () => {
+                        if (toggleInp.value === 'Evet') {
+                            textGroup.style.display = 'block';
+                        } else {
+                            textGroup.style.display = 'none';
+                        }
+                    };
+                    const parentToggle = toggleInp.parentElement;
+                    parentToggle.addEventListener('click', () => { setTimeout(updateVisibility, 50); });
+                    updateVisibility();
+                }
+            }, 100);
+        }
     }
     else if (apiUrl && apiUrl.trim() !== '') {
         fetch(`${apiUrl}?api=true&action=getGameConfig&sheetName=${encodeURIComponent(configSheet)}`)
@@ -535,7 +610,7 @@ function populateSetupForm(config) {
                 const defaultValues = String(setting.DefaultValue).split(',').map(val => val.trim());
 
                 multiOptions.forEach(optionText => {
-                    const checkboxId = `${setting.SettingName}_${optionText.trim()}`;
+                    const checkboxId = `${setting.SettingName}_${optionText.trim()} `;
                     const optContainer = document.createElement('label');
                     optContainer.setAttribute('for', checkboxId);
 
@@ -554,7 +629,7 @@ function populateSetupForm(config) {
                 });
                 break;
 
-            case 'toggle':
+            case 'toggle': {
                 inputElement = document.createElement('div');
                 inputElement.className = 'toggle-container';
                 inputElement.style.cssText = "display: flex; align-items: center; position: relative; background: rgba(0,0,0,0.2); border-radius: 30px; padding: 4px; border: 1px solid var(--glass-border); cursor: pointer; user-select: none; width: max-content; margin-top: 5px;";
@@ -602,8 +677,9 @@ function populateSetupForm(config) {
                     }
                 });
                 break;
+            }
 
-            case 'dynamic-dropdown':
+            case 'dynamic-dropdown': {
                 inputElement = document.createElement('select');
                 inputElement.id = setting.SettingName;
                 inputElement.name = setting.SettingName;
@@ -646,8 +722,9 @@ function populateSetupForm(config) {
                     }
                 }
                 break;
+            }
 
-            case 'custom-qr-data':
+            case 'custom-qr-data': {
                 // Sadece QuickReveal Custom Set için Ozel Textarea ve Yardım Butonu UI'ı
                 const wrapper = document.createElement('div');
                 wrapper.style.display = "flex";
@@ -675,6 +752,7 @@ function populateSetupForm(config) {
                 formGroup.appendChild(wrapper);
                 inputElement = null; // FormGroup'a wrapper olarak eklendi, aşağıda tekrar eklenmemesi için null geç.
                 break;
+            }
 
             default:
                 inputElement = document.createElement('input');
@@ -709,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentGameConfigData.forEach(setting => {
                 const inputElement = document.getElementById(setting.SettingName);
                 if (setting.Type === 'multiselect') {
-                    const checkedValues = Array.from(document.querySelectorAll(`input[name="${setting.SettingName}"]:checked`))
+                    const checkedValues = Array.from(document.querySelectorAll(`input[name = "${setting.SettingName}"]: checked`))
                         .map(cb => cb.value);
                     formData[setting.SettingName] = checkedValues.join(',');
                 } else if (inputElement) {
@@ -951,7 +1029,7 @@ function openQrTutorialModal() {
         box.style.position = 'relative';
 
         box.innerHTML = `
-            <button id="closeQrModalBtn" style="position:absolute; top:15px; right:15px; background:transparent; border:none; color:var(--text-color); font-size:1.5rem; cursor:pointer;"><i class="fas fa-times"></i></button>
+    < button id = "closeQrModalBtn" style = "position:absolute; top:15px; right:15px; background:transparent; border:none; color:var(--text-color); font-size:1.5rem; cursor:pointer;" > <i class="fas fa-times"></i></button >
             <h2 style="color:var(--primary-color); margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;"><i class="fas fa-magic"></i> Kendi Listenizi Nasıl Yüklersiniz?</h2>
             
             <p style="color:var(--text-muted); margin-bottom:1.5rem;">Sadece 3 adımda öğrencilerinize özel oyununuz hazır! En pratik yol olan <b>Özel Metin Listesi</b> veya <b>Google Sheets</b> kullanabilirsiniz.</p>
