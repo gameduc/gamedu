@@ -119,7 +119,7 @@ const LingoEngine = {
         }
 
         const wordData = this.state.words[this.state.currentWordIndex];
-        this.state.currentWord = wordData.Word.toUpperCase();
+        this.state.currentWord = wordData.Word.toLocaleUpperCase('tr-TR');
         this.state.wordLength = this.state.currentWord.length;
         this.state.currentPlayerIndex = this.state.players.indexOf(wordData.Player);
         this.state.currentQuota = wordData.Quota;
@@ -222,7 +222,7 @@ const LingoEngine = {
         if (this.state.isWaitingForNext || this.state.isGameOver || this.state.timeLeft <= 0) return;
 
         const inputEl = document.getElementById('lingoGuessInput');
-        let guess = inputEl.value.toUpperCase().trim();
+        let guess = inputEl.value.toLocaleUpperCase('tr-TR').trim();
 
         if (guess.length !== this.state.wordLength) {
             this.showMessage(`Kelime ${this.state.wordLength} harfli olmalı!`, 'error');
