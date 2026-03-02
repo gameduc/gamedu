@@ -787,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentGameConfigData.forEach(setting => {
                 const inputElement = document.getElementById(setting.SettingName);
                 if (setting.Type === 'multiselect') {
-                    const checkedValues = Array.from(document.querySelectorAll(`input[name = "${setting.SettingName}"]: checked`))
+                    const checkedValues = Array.from(document.querySelectorAll(`input[name="${setting.SettingName}"]:checked`))
                         .map(cb => cb.value);
                     formData[setting.SettingName] = checkedValues.join(',');
                 } else if (inputElement) {
