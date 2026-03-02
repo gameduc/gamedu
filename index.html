@@ -58,7 +58,8 @@
 
         <!-- Lobi Modülü: Karşılama Alanı -->
         <section id="welcomeHero" class="hero">
-            <h1>Eğlenerek Öğrenmeye<br>Hazır Mısın?</h1>
+            <h1 style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Eğlenerek Öğrenmeye Hazır Mısın?
+            </h1>
             <p>Oyun tabanlı öğrenme platformuna hoş geldin. Yüzlerce kelime, soru ve macera seni bekliyor. Hemen bir
                 oyun seç ve başla!</p>
         </section>
@@ -167,8 +168,9 @@
 
             <div class="game-controls" style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
 
-                <div style="width: 100%; max-width: 500px; display: flex; gap: 10px;">
-                    <button id="plusBtn" class="login-btn" style="flex: 1; font-size: 2rem; padding: 10px;">+</button>
+                <div style="width: 100%; max-width: 600px; display: flex; gap: 10px;">
+                    <button id="plusBtn" class="login-btn"
+                        style="flex: 1; font-size: 2rem; padding: 10px; max-width: 100px;">+</button>
                     <button id="minusBtn" class="login-btn"
                         style="flex: 1; font-size: 2rem; padding: 10px; background: #ef4444; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">-</button>
                     <button id="actionBtn" class="login-btn"
@@ -607,12 +609,297 @@
             </div>
         </section>
 
+        <!-- QuickReveal Oyun Ekran Modülü (Faz 6) -->
+        <section id="quickRevealGameArea" class="hidden-spa-module"
+            style="max-width: 900px; margin: 0 auto; padding: 20px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+                <h1 id="qrGameTitle" style="font-size: 2rem; margin: 0; color: #fff;">QuickReveal</h1>
+
+                <!-- Grup Skorları Alanı -->
+                <div id="qrGroupScores" class="group-scores-container"
+                    style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+                </div>
+
+                <div id="qrCategoryBadge"
+                    style="background: rgba(139, 92, 246, 0.2); padding: 8px 15px; border-radius: 8px; font-weight: bold; color: #a78bfa;">
+                    Kategori: <span id="qrCurrentCategory">Numbers</span>
+                </div>
+            </div>
+
+            <!-- Flashcard Alanı -->
+            <div class="qr-flashcard-container" onclick="qrFlipCard()"
+                style="perspective: 1200px; width: 100%; height: 360px; margin-bottom: 1.5rem; cursor: pointer;">
+                <div id="qrFlashcard" class="qr-flashcard"
+                    style="width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d;">
+                    <!-- Soru Yüzü -->
+                    <div class="qr-card-face qr-card-front"
+                        style="position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: var(--glass-bg); border: 2px solid rgba(139, 92, 246, 0.4); border-radius: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
+                        <!-- Analog saat için canvas eklenecek -->
+                        <div id="qrFrontCanvasContainer"
+                            style="display:none; width:100%; height:100%; justify-content:center; align-items:center;">
+                        </div>
+                        <!-- Normal Metin / Matematik Soru Container -->
+                        <div id="qrFrontContent"
+                            style="font-size: 6rem; font-weight: 800; color: #fff; text-align: center; padding:20px;">15
+                            + 23</div>
+                        <div style="position:absolute; bottom:20px; color:rgba(255,255,255,0.4); font-size:1rem;">Cevabı
+                            görmek için tıkla</div>
+                    </div>
+                    <!-- Cevap Yüzü -->
+                    <div class="qr-card-face qr-card-back"
+                        style="position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(124, 58, 237, 0.9)); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; transform: rotateY(180deg); box-shadow: 0 15px 35px rgba(139, 92, 246, 0.4); backdrop-filter: blur(10px);">
+                        <div id="qrBackContent"
+                            style="font-size: 4.5rem; font-weight: 800; color: #fff; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); padding:20px;">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                .qr-flashcard.flipped {
+                    transform: rotateY(180deg);
+                }
+            </style>
+
+            <div class="game-controls"
+                style="display: flex; gap: 15px; justify-content: center; flex-wrap:wrap; align-items:center;">
+                <div id="qrCheckboxContainer"
+                    style="display: none; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px 15px; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px;">
+                </div>
+                <button id="qrPlusBtn" class="login-btn"
+                    style="flex: 1; font-size: 2rem; padding: 10px; max-width: 100px; background: #10b981; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">+</button>
+                <button id="qrNextBtn" onclick="qrNextQuestion()" class="login-btn"
+                    style="min-width: 250px; background: #8b5cf6; font-size: 1.2rem; padding: 15px 30px;">Sonraki Soru
+                    (Boşluk)</button>
+                <button id="qrBackToSetupBtn" class="login-btn"
+                    onclick="document.getElementById('quickRevealGameArea').style.display='none'; document.getElementById('setupArea').style.display='block';"
+                    style="min-width: 150px; background: transparent; border: 1px solid var(--glass-border); font-size: 1.2rem; padding: 15px 30px;">Ayarlara
+                    Dön</button>
+            </div>
+        </section>
+
+        <!-- BaamBoo Oyun Ekran Modülü (Faz 7) -->
+        <section id="baambooGameArea" class="hidden-spa-module"
+            style="max-width: 1000px; margin: 0 auto; padding: 20px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+                <h1 id="baambooGameTitle"
+                    style="font-size: 2.2rem; margin: 0; color: #06b6d4; text-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);">
+                    BaamBoo</h1>
+
+                <!-- Grup Skorları Alanı -->
+                <div id="baambooGroupScores" class="group-scores-container"
+                    style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+                    <!-- JS Tarafından Doldurulacak -->
+                </div>
+
+                <div id="baambooCategoryBadge"
+                    style="background: rgba(6, 182, 212, 0.2); padding: 8px 15px; border-radius: 8px; font-weight: bold; color: #67e8f9;">
+                    Süre: <span id="baambooTimerDisplay"
+                        style="color: #ef4444; font-size: 1.1rem; margin-left:5px;">∞</span>
+                </div>
+            </div>
+
+            <!-- Aksiyon (GameInWords) HUD (Hangisi çıktı, hangisi kaldı) -->
+            <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 2rem; flex-wrap: wrap;">
+                <div id="hud-baam" class="hud-item"
+                    style="background: #0891b2; color: #fff; padding: 8px 15px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s; opacity: 1;">
+                    BAAM (+30)</div>
+                <div id="hud-boo" class="hud-item"
+                    style="background: #ef4444; color: #fff; padding: 8px 15px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s; opacity: 1;">
+                    BOO (-30)</div>
+                <div id="hud-magnet" class="hud-item"
+                    style="background: #eab308; color: #fff; padding: 8px 15px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s; opacity: 1;">
+                    🧲 MAGNET</div>
+                <div id="hud-swap" class="hud-item"
+                    style="background: #a855f7; color: #fff; padding: 8px 15px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s; opacity: 1;">
+                    ⚖️ SWAP</div>
+                <div id="hud-plus20" class="hud-item"
+                    style="background: #10b981; color: #fff; padding: 8px 15px; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.3s; opacity: 1;">
+                    +20 Puan</div>
+            </div>
+
+            <style>
+                /* BaamBoo Ana Grid */
+                .baamboo-grid {
+                    display: grid;
+                    grid-template-columns: repeat(6, 1fr);
+                    gap: 15px;
+                    margin-bottom: 2rem;
+                }
+
+                @media (max-width: 768px) {
+                    .baamboo-grid {
+                        grid-template-columns: repeat(4, 1fr);
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .baamboo-grid {
+                        grid-template-columns: repeat(3, 1fr);
+                    }
+                }
+
+                /* BaamBoo Kutusu (3D Turkuaz) */
+                .baamboo-box {
+                    background: linear-gradient(135deg, #06b6d4, #0891b2);
+                    border-radius: 12px;
+                    aspect-ratio: 1 / 1;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-size: 2.5rem;
+                    font-weight: 900;
+                    color: white;
+                    cursor: pointer;
+                    box-shadow: 0 8px 0 #164e63, 0 15px 20px rgba(0, 0, 0, 0.4);
+                    transition: transform 0.1s, box-shadow 0.1s, filter 0.3s, background 0.3s;
+                    user-select: none;
+                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                }
+
+                .baamboo-box:hover {
+                    filter: brightness(1.2);
+                    transform: translateY(-2px);
+                    box-shadow: 0 10px 0 #164e63, 0 20px 25px rgba(0, 0, 0, 0.5);
+                }
+
+                .baamboo-box:active {
+                    transform: translateY(8px);
+                    box-shadow: 0 0 0 #164e63, 0 5px 10px rgba(0, 0, 0, 0.3);
+                }
+
+                /* Kullanılmış Gri Kutu */
+                .baamboo-box.used {
+                    background: #475569;
+                    color: #94a3b8;
+                    box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.5);
+                    cursor: not-allowed;
+                    transform: translateY(8px);
+                    /* İçine çökük durur */
+                    filter: none;
+                    text-shadow: none;
+                }
+
+                .baamboo-box.used:hover {
+                    box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.5);
+                    transform: translateY(8px);
+                }
+            </style>
+
+            <div id="baambooGridContainer" class="baamboo-grid">
+                <!-- Kutular JavaScript ile çizilecek (1-24) -->
+            </div>
+
+            <!-- Soru / Detay Modal (Esnek Yapı) -->
+            <div id="baambooQuestionArea"
+                style="display: none; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 2rem; position: relative;">
+
+                <h2 id="baambooQuestionTitle" style="color:#06b6d4; margin-top:0; margin-bottom:1rem;">SORU 12</h2>
+
+                <!-- Soru Gövdesi (Resim + Metin Esnek) -->
+                <div id="baambooQuestionContent"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; min-height: 200px; margin-bottom: 1.5rem;">
+                    <!-- JS injects content here (Images and big text) -->
+                </div>
+
+                <!-- Çoktan Seçmeli Şıklar (Eğer varsa) -->
+                <div id="baambooOptionsContainer"
+                    style="display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto; margin-bottom: 1.5rem;">
+                    <!-- JS inects buttons -->
+                </div>
+
+                <!-- Ergonomik Yönetsel Butonlar -->
+                <div
+                    style="display: flex; gap: 15px; justify-content: center; flex-wrap:wrap; align-items:center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                    <button id="bbClueBtn" class="login-btn"
+                        style="flex: 1; max-width: 150px; background: #3b82f6; font-size: 1.1rem; padding: 12px; display:none;">?
+                        İpucu</button>
+                    <button id="bbShowAnswerBtn" class="login-btn"
+                        style="flex: 1; max-width: 200px; background: #eab308; color: #000; font-size: 1.1rem; padding: 12px;">Cevabı
+                        Göster</button>
+                    <button id="bbPlusBtn" class="login-btn"
+                        style="flex: 2; max-width: 250px; background: #10b981; font-size: 1.2rem; padding: 12px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">+15
+                        Puan Ver</button>
+                    <button id="bbPassBtn" class="login-btn"
+                        style="flex: 1; max-width: 150px; background: #ef4444; font-size: 1.1rem; padding: 12px;">Kapat
+                        / Geç</button>
+                </div>
+
+                <!-- İpucu Gösterim Alanı -->
+                <div id="bbClueDisplay"
+                    style="display:none; margin-top:15px; padding:15px; background:rgba(59, 130, 246, 0.2); border-radius:8px; border:1px solid rgba(59, 130, 246, 0.5); color:#93c5fd; font-weight:bold;">
+                </div>
+            </div>
+
+            <!-- Alt Kontroller -->
+            <div style="text-align: center; margin-top:1rem;">
+                <button id="baambooBackToSetupBtn" class="login-btn"
+                    onclick="document.getElementById('baambooGameArea').style.display='none'; document.getElementById('setupArea').style.display='block';"
+                    style="background: transparent; border: 1px solid var(--glass-border); padding: 12px 30px; font-size: 1.1rem;">Ayarlara
+                    Dön (BaamBoo)</button>
+            </div>
+        </section>
+
+        <!-- Dictionary (Sözlük Bulmaca) Oyun Ekran Modülü (Faz 8) -->
+        <section id="dictionaryGameArea" class="hidden-spa-module"
+            style="max-width: 1000px; margin: 0 auto; padding: 20px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 15px;">
+                <h1 id="dictionaryPlayingGameTitle"
+                    style="font-size: 2.2rem; margin: 0; color: #fff; text-shadow: 2px 2px 5px rgba(0,0,0,0.5);">
+                    DUEL OF DICTIONARIES</h1>
+
+                <!-- Grup Skorları Alanı -->
+                <div id="dictionaryGroupScores" class="group-scores-container"
+                    style="display: flex; flex-wrap: wrap; gap: 15px;">
+                    <!-- JS Tarafından Doldurulacak -->
+                </div>
+            </div>
+
+            <div class="game-content-card"
+                style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 3rem 2rem; text-align: center; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 2rem; position: relative;">
+
+                <h3 style="color:#cbd5e1; margin-top:0; font-weight: normal; font-size: 1.2rem;">Sözlükte bu kelimeyi
+                    ilk kim bulacak?</h3>
+
+                <!-- Kelime Gösterim Alanı -->
+                <div id="dictionaryWordDisplay"
+                    style="font-size: 5rem; font-weight: 900; color: #fff; text-shadow: 2px 4px 10px rgba(0,0,0,0.4); margin: 2rem 0; min-height: 120px; display: flex; align-items: center; justify-content: center; word-break: break-word; font-family: 'Outfit', sans-serif; letter-spacing: 2px;">
+                    Yükleniyor...
+                </div>
+
+                <!-- Oyun Sonu Modalı veya Mesajı -->
+                <div id="dictionaryMessage"
+                    style="color: #ec4899; font-size: 1.5rem; font-weight: bold; margin-top: 1rem; min-height: 35px;">
+                </div>
+            </div>
+
+            <!-- Alt Kontroller -->
+            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                <button id="dictionaryNextWordBtn" class="login-btn"
+                    style="background: #3b82f6; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); font-size: 1.2rem; padding: 12px 30px;">
+                    Sıradaki Kelime
+                </button>
+                <button id="dictionaryBackToSetupBtn" class="login-btn"
+                    onclick="document.getElementById('dictionaryGameArea').style.display='none'; document.getElementById('setupArea').style.display='block';"
+                    style="background: transparent; border: 1px solid var(--glass-border); padding: 12px 30px; font-size: 1.2rem;">
+                    Ayarlara Dön
+                </button>
+            </div>
+        </section>
+
     </main>
     <script src="./config.js"></script>
     <script src="./js/app.js"></script>
     <script src="./js/bang.js"></script>
     <script src="./js/lingo.js"></script>
     <script src="./js/beecomb.js"></script>
+    <script src="./js/quickreveal.js"></script>
+    <script src="./js/baamboo.js"></script>
+    <script src="./js/dictionary.js"></script>
 </body>
 
 </html>
