@@ -27,10 +27,9 @@ const BaambooEngine = {
 
         this.currentActiveGroupIndex = 0;
 
-        // Fetch Data from API
-        const apiUrl = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
-        if (apiUrl && apiUrl.trim() !== '') {
-            this.fetchDataFromApi(apiUrl, config);
+        // Fetch Data from Firebase (Dinamik Set Checkbox Sistemine Geçildi)
+        if (typeof database !== 'undefined') {
+            this.fetchDataFromFirebase(config);
         } else {
             // Şimdilik sorular ve aksiyonlar için sahte bir dağılım yapalım (19 Soru + 5 Aksiyon)
             this.generateBoxData();
@@ -52,34 +51,72 @@ const BaambooEngine = {
         document.getElementById('bbClueBtn').onclick = () => this.showClue();
     },
 
-    fetchDataFromApi: function (apiUrl, config) {
-        document.getElementById('baambooGridContainer').innerHTML = '<h2 style="color:white; grid-column: 1 / -1; text-align:center;">QPool Veritabanından Sorular Çekiliyor... Lütfen Bekleyin 🚀</h2>';
+    fetchDataFromFirebase: function (config) {
+        document.getElementById('baambooGridContainer').innerHTML = '<h2 style="color:white; grid-column: 1 / -1; text-align:center;">Firebase Veritabanından Sorular Çekiliyor... Lütfen Bekleyin 🚀</h2>';
 
-        let params = new URLSearchParams();
-        params.append('api', 'true');
-        params.append('action', 'getBaambooData');
-        params.append('BbClass', config.BbClass || "Tümü");
-        params.append('BbLesson', config.BbLesson || "Tümü");
-        params.append('BbTopic', config.BbTopic || "Tümü");
-        params.append('BbIsMultipleChoice', config.BbIsMultipleChoice || "Evet");
+        const setIds = config.BbSetsCheckbox ? config.BbSetsCheckbox.split(',') : [];
+        if (setIds.length === 0 || typeof database === 'undefined') {
+            showOzelAlert("Seçilen set bulunamadı veya veritabanına bağlanılamadı.", "hata");
+            this.generateBoxData();
+            this.startUI();
+            return;
+        }
 
-        fetch(`${apiUrl}?${params.toString()}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    showOzelAlert("Veri Çekme Hatası: " + data.error, "hata");
-                    this.generateBoxData(); // Fallback
-                    this.startUI();
-                } else if (data.success && data.questions) {
-                    this.processApiData(data.questions);
-                    this.startUI();
+        let allQuestions = [];
+        let promises = setIds.map(id => database.ref('MasterPool/' + id).once('value'));
+
+        Promise.all(promises).then(snapshots => {
+            snapshots.forEach(snap => {
+                if (snap.exists()) {
+                    let setData = snap.val();
+                    if (setData.Data && Array.isArray(setData.Data)) {
+                        setData.Data.forEach(item => {
+                            if (item) {
+                                // Apply settings filter (Multichoice vs OpenEnded)
+                                const reqAction = config.BbIsMultipleChoice || "Tümü"; // "Tümü", "Çoktan Seçmeli", "Açık Uçlu"
+                                let isItemMulti = (setData.SubType !== 'acik_uclu');
+                                let addIt = false;
+                                if (reqAction === "Tümü") addIt = true;
+                                else if (reqAction === "Çoktan Seçmeli" && isItemMulti) addIt = true;
+                                else if (reqAction === "Açık Uçlu" && !isItemMulti) addIt = true;
+
+                                if (addIt) {
+                                    allQuestions.push({
+                                        text: item.QuestionText,
+                                        correctAnswer: item.CorrectAnswer || item.OptionA || "Cevap Yok",
+                                        clue: item.Clue || "",
+                                        imgUrl: item.ImgURL || "",
+                                        isMultipleChoice: isItemMulti,
+                                        options: {
+                                            A: item.OptionA || "",
+                                            B: item.OptionB || "",
+                                            C: item.OptionC || "",
+                                            D: item.OptionD || "",
+                                            E: item.OptionE || ""
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
                 }
-            })
-            .catch(err => {
-                showOzelAlert("Bağlantı Hatası: QPool verileri alınamadı.", "hata");
+            });
+
+            // Shuffle and pick
+            allQuestions = allQuestions.sort(() => 0.5 - Math.random());
+            if (allQuestions.length === 0) {
+                showOzelAlert("Seçilen setlerde bu kriterlere uygun soru bulunamadı.", "hata");
                 this.generateBoxData(); // Fallback
                 this.startUI();
-            });
+            } else {
+                this.processApiData(allQuestions);
+                this.startUI();
+            }
+        }).catch(err => {
+            showOzelAlert("Firebase Hatası: " + err.message, "hata");
+            this.generateBoxData();
+            this.startUI();
+        });
     },
 
     processApiData: function (questions) {
@@ -334,7 +371,7 @@ const BaambooEngine = {
 
         if (boxData.clue) {
             document.getElementById('bbClueBtn').style.display = 'inline-block';
-            document.getElementById('bbClueDisplay').innerText = boxData.clue;
+            document.getElementById('bbClueDisplay').innerHTML = boxData.clue.startsWith('http') ? `<img src="${boxData.clue}" style="max-height:100px; border-radius:5px; margin-top:5px;">` : boxData.clue;
         } else {
             document.getElementById('bbClueBtn').style.display = 'none';
         }
