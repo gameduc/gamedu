@@ -1,6 +1,6 @@
 const AppConfig = {
     appName: "GamEdu - Eğitim Oyunları",
-    version: "3.0.0",
+    version: "1.0.0",
 
     // Google Apps Script API Endpoint'imiz (Faz 1 - Step 3'te JSON döndürecek şekilde güncellenecek)
     // Şimdilik boş bırakıyoruz, Apps Script'te API mode kurgulandığında url buraya girecek.
