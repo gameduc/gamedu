@@ -21,7 +21,7 @@
 <body>
 
     <!-- Özel Alert Modal - Sistem Genelinde Ortak -->
-    <div id="ozelAlertOverlay" class="ozel-alert-overlay">
+    <div id="ozelAlertOverlay" class="ozel-alert-overlay" style="z-index: 10005;">
         <div class="ozel-alert-box">
             <div id="ozelAlertIcon" class="ozel-alert-icon">⚠️</div>
             <div id="ozelAlertMessage" class="ozel-alert-message">Mesaj</div>
@@ -48,12 +48,85 @@
                     A.Aytekin</small></span>
         </a>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="login-btn" onclick="teacherLogin()">Öğretmen Girişi</button>
+            <button id="navTeacherBtn" class="login-btn"
+                onclick="window.handleNavTeacherBtn && window.handleNavTeacherBtn()">Öğretmen Girişi</button>
             <button onclick="document.querySelector('.navbar').style.display='none'"
                 style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem;"
                 title="Üst Menüyü Gizle">✖</button>
         </div>
     </nav>
+
+    <!-- CSS for CRUD Tables and Set Cards -->
+    <style>
+        .crud-table th,
+        .crud-table td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            /* Daha fazla veri için boşluklar daraltıldı */
+        }
+
+        .crud-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .crud-table input {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 4px;
+        }
+
+        .action-btn {
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            /* Butonlar da daraltıldı */
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .btn-edit {
+            background: #3b82f6;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+        }
+
+        .set-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .set-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .set-detail h4 {
+            margin: 0 0 5px 0;
+            color: #f8fafc;
+        }
+
+        .set-detail p {
+            margin: 0;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+    </style>
 
     <!-- ANA SPA (Single Page Application) ÇERÇEVESİ -->
     <main id="mainContent">
@@ -894,8 +967,437 @@
         </section>
 
     </main>
+
+    <!-- ÖĞRETMEN AUTH MODAL -->
+    <div id="authOverlay" class="ozel-alert-overlay">
+        <div id="authArea" class="ozel-alert-box"
+            style="padding: 3rem; max-width: 400px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--glass-border);">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#fff; font-size:1.5rem;">Öğretmen Girişi</h2>
+                <button onclick="document.getElementById('authOverlay').classList.remove('active')"
+                    style="background:none; border:none; color:#ef4444; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.9em; margin-bottom: 20px;">GamEdu
+                MasterPool bağlantısı için giriş yapın.</p>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 15px;">
+                <label style="color:#cbd5e1; font-size:14px; margin-bottom:5px; display:block;">Kullanıcı Adı (Yazar
+                    İsmi) <span style="font-size:11px; color:#94a3b8;">*Yeni Kayıt İçin</span></label>
+                <input type="text" id="usernameInput" placeholder="Sahnede görünecek takma adınız"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.1); color:#fff; box-sizing:border-box;">
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 15px;">
+                <label style="color:#cbd5e1; font-size:14px; margin-bottom:5px; display:block;">E-Posta Adresi</label>
+                <input type="email" id="emailInput" placeholder="ornek@okul.edu.tr"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.1); color:#fff; box-sizing:border-box;">
+            </div>
+            <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                <label style="color:#cbd5e1; font-size:14px; margin-bottom:5px; display:block;">Şifre</label>
+                <input type="password" id="passwordInput" placeholder="En az 6 karakter"
+                    style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.1); color:#fff; box-sizing:border-box;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button id="loginBtn" class="login-btn" style="width:100%; padding:12px; background:#3b82f6;">Giriş
+                    Yap</button>
+                <button id="registerBtn" class="login-btn"
+                    style="width:100%; padding:12px; background:transparent; border:1px solid #3b82f6; color:#3b82f6;">Yeni
+                    Kayıt Ol</button>
+                <div style="text-align:center; margin-top:10px;">
+                    <a href="#" id="forgotPasswordBtn"
+                        style="color:#94a3b8; font-size:13px; text-decoration:underline;">Şifremi Unuttum</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÖĞRETMEN DASHBOARD SPA -->
+    <section id="dashboardArea" class="hidden-spa-module container-setup"
+        style="max-width: 1200px; padding:2rem; width:100%; box-sizing:border-box;">
+        <div
+            style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+            <h2 style="margin:0; font-size:1.8rem; color:#fff;">GamEdu <span style="color:#60a5fa;">Yönetim
+                    Paneli</span></h2>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span id="userEmailDisplay" style="color:#94a3b8; font-size:0.9rem; margin-right:10px;"></span>
+                <button id="adminMigrateBtn"
+                    style="display:none; background:#8b5cf6; padding:8px 15px; border-radius:8px; border:1px solid #7c3aed; color:#fff; font-size:0.9rem; cursor:pointer;"
+                    title="GamEdu Legacy Datasını Firebase'e Aktar">🚀 GamEdu Aktarım</button>
+                <button
+                    onclick="document.getElementById('dashboardArea').style.display='none'; document.getElementById('welcomeHero').style.display='block'; document.getElementById('gamesListArea').style.display='flex'; document.getElementById('navTeacherBtn').style.display='inline-block';"
+                    class="login-btn" style="background:transparent; border:1px solid var(--glass-border);">⬅ Lobiye
+                    Dön</button>
+                <button id="logoutBtn" class="login-btn" style="background:#ef4444; border-color:#ef4444;">Çıkış
+                    Yap</button>
+            </div>
+        </div>
+
+        <div id="messageBox" class="hidden"></div>
+
+        <!-- TAB (SEKME) MENÜSÜ -->
+        <div class="dashboard-tabs"
+            style="display:flex; gap:10px; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+            <button onclick="switchDashboardTab('globalSetsTab')" id="btnTab_globalSetsTab" class="login-btn active-tab"
+                style="background:#8b5cf6; padding:10px 20px;">🌍 GamEdu Keşfet</button>
+            <button onclick="switchDashboardTab('mySetsTab')" id="btnTab_mySetsTab" class="login-btn"
+                style="background:transparent; border:1px solid #3b82f6; color:#3b82f6; padding:10px 20px;">📂 Setlerim
+                <span id="mySetsBadge" class="badge" style="margin-left:5px; padding:2px 6px;">0</span></button>
+            <button onclick="switchDashboardTab('createSetTab')" id="btnTab_createSetTab" class="login-btn"
+                style="background:transparent; border:1px solid #10b981; color:#10b981; padding:10px 20px;">➕ Yeni Set
+                Ekle</button>
+        </div>
+
+        <div id="dashboardTabContents">
+
+            <!-- SEKME 1: GLOBAL SETLER (Default Açık) -->
+            <div id="globalSetsTab" class="dash-tab-content" style="display:block;">
+                <div
+                    style="background:rgba(139,92,246,0.05); padding:20px; border-radius:12px; border:1px dashed rgba(139,92,246,0.3);">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(139,92,246,0.2); padding-bottom:10px; margin-bottom:15px; flex-wrap:nowrap; gap:10px; overflow-x:auto;">
+                        <h3 style="margin:0; color:#a78bfa; font-size:1.1rem; white-space:nowrap;">GamEdu Keşfet <span
+                                id="globalSetsBadge" class="badge"
+                                style="background:rgba(139,92,246,0.2); color:#a78bfa;">0</span></h3>
+                        <!-- Gelişmiş Filtreleme -->
+                        <div style="flex:1; display:flex; gap:5px; flex-wrap:nowrap; justify-content:flex-end;">
+                            <select id="globalFilterGrade"
+                                onchange="window.filterSets('globalSetsList', 'globalSearchInput')"
+                                style="min-width:100px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(139,92,246,0.5); border-radius:5px;">
+                                <option value="">Tüm Kademe</option>
+                                <option value="İlkokul">İlkokul</option>
+                                <option value="Ortaokul">Ortaokul</option>
+                                <option value="Lise">Lise</option>
+                            </select>
+                            <select id="globalFilterClass"
+                                onchange="window.filterSets('globalSetsList', 'globalSearchInput')"
+                                style="min-width:100px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(139,92,246,0.5); border-radius:5px;">
+                                <option value="">Tüm Sınıf</option>
+                            </select>
+                            <select id="globalFilterLesson"
+                                onchange="window.filterSets('globalSetsList', 'globalSearchInput')"
+                                style="min-width:110px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(139,92,246,0.5); border-radius:5px;">
+                                <option value="">Tüm Dersler</option>
+                                <option value="İngilizce">İngilizce</option>
+                                <option value="Türkçe">Türkçe</option>
+                                <option value="Matematik">Matematik</option>
+                                <option value="Fen Bilimleri">Fen Bilimleri</option>
+                                <option value="Sosyal Bilgiler">Sosyal Bilgiler</option>
+                            </select>
+                            <input type="text" id="globalSearchInput" placeholder="Serbest Metin Ara..."
+                                onkeyup="window.filterSets('globalSetsList', 'globalSearchInput')"
+                                style="flex:1; min-width:130px; max-width:250px; box-sizing:border-box; padding:8px 12px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(139,92,246,0.5); border-radius:5px;">
+                        </div>
+                    </div>
+                    <div id="globalSetsList" style="max-height:600px; overflow-y:auto; padding-right:10px;">
+                        <p style="color:#64748b; font-style:italic;">Yükleniyor...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEKME 2: BENİM SETLERİM -->
+            <div id="mySetsTab" class="dash-tab-content" style="display:none;">
+                <div
+                    style="background:rgba(15,23,42,0.4); padding:20px; border-radius:12px; border:1px solid var(--glass-border);">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--glass-border); padding-bottom:10px; margin-bottom:15px; flex-wrap:nowrap; gap:10px; overflow-x:auto;">
+                        <h3 style="margin:0; color:#60a5fa; font-size:1.1rem; white-space:nowrap;">Kayıtlı Setlerim</h3>
+                        <div style="flex:1; display:flex; gap:5px; flex-wrap:nowrap; justify-content:flex-end;">
+                            <select id="mySetsFilterGrade"
+                                onchange="window.filterSets('mySetsList', 'mySetsSearchInput')"
+                                style="min-width:100px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(59,130,246,0.5); border-radius:5px;">
+                                <option value="">Tüm Kademe</option>
+                                <option value="İlkokul">İlkokul</option>
+                                <option value="Ortaokul">Ortaokul</option>
+                                <option value="Lise">Lise</option>
+                            </select>
+                            <select id="mySetsFilterClass"
+                                onchange="window.filterSets('mySetsList', 'mySetsSearchInput')"
+                                style="min-width:100px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(59,130,246,0.5); border-radius:5px;">
+                                <option value="">Tüm Sınıf</option>
+                            </select>
+                            <select id="mySetsFilterLesson"
+                                onchange="window.filterSets('mySetsList', 'mySetsSearchInput')"
+                                style="min-width:110px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(59,130,246,0.5); border-radius:5px;">
+                                <option value="">Tüm Dersler</option>
+                                <option value="İngilizce">İngilizce</option>
+                                <option value="Türkçe">Türkçe</option>
+                                <option value="Matematik">Matematik</option>
+                                <option value="Fen Bilimleri">Fen Bilimleri</option>
+                                <option value="Sosyal Bilgiler">Sosyal Bilgiler</option>
+                            </select>
+                            <input type="text" id="mySetsSearchInput" placeholder="Serbest Metin Ara..."
+                                onkeyup="window.filterSets('mySetsList', 'mySetsSearchInput')"
+                                style="flex:1; min-width:130px; max-width:250px; box-sizing:border-box; padding:8px 12px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(59,130,246,0.5); border-radius:5px;">
+                        </div>
+                    </div>
+                    <div id="mySetsList" style="max-height:600px; overflow-y:auto; padding-right:10px;">
+                        <p style="color:#64748b; font-style:italic;">Setiniz bulunmuyor...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORTAK DERS LİSTESİ (DATALIST) -->
+            <datalist id="lessonSuggestions">
+                <option value="İngilizce">
+                <option value="Matematik">
+                <option value="Türkçe">
+                <option value="Türk Dili ve Edebiyatı">
+                <option value="Hayat Bilgisi">
+                <option value="Fen Bilimleri">
+                <option value="Sosyal Bilgiler">
+                <option value="Tarih">
+                <option value="T.C. İnkılap Tarihi">
+                <option value="Coğrafya">
+                <option value="Fizik">
+                <option value="Kimya">
+                <option value="Biyoloji">
+                <option value="Felsefe">
+                <option value="Din Kültürü">
+                <option value="Ortak">
+                <option value="Genel">
+            </datalist>
+
+            <!-- SEKME 3: YENİ SET EKLE -->
+            <div id="createSetTab" class="dash-tab-content" style="display:none;">
+                <div
+                    style="background:rgba(15,23,42,0.4); padding:20px; border-radius:12px; border:1px solid var(--glass-border);">
+                    <h3 style="margin-top:0; color:#cbd5e1; font-size:1.3rem;">Yeni Kendi Setini Oluştur</h3>
+
+                    <div style="display:flex; gap:10px; margin-bottom:20px;">
+                        <button id="tabExcelBtn" class="action-btn"
+                            style="background-color:#3b82f6; flex:1; padding:10px; font-size:1rem;">📋 Toplu Excel
+                            Ekle</button>
+                        <button id="tabManualBtn" class="action-btn"
+                            style="background-color:rgba(255,255,255,0.1); color:#cbd5e1; flex:1; padding:10px; border:1px solid var(--glass-border); font-size:1rem;">✍️
+                            Manuel Ekle</button>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:15px; text-align:left;">
+                        <label style="color:#94a3b8; font-size:14px; margin-bottom:5px; display:block;">Set Tipi
+                            Seçimi</label>
+                        <select id="setTypeSelect" onchange="window.updateTemplateUI && window.updateTemplateUI()"
+                            style="width:100%; padding:10px; background:rgba(15,23,42,0.8); color:#fff; border:1px solid var(--glass-border); border-radius:5px;">
+                            <option value="wordspool">Kelime Seti (Bang, Lingo, QR, Dictionary)</option>
+                            <option value="qpool">Soru Seti (BaamBoo, BeeComb)</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-bottom:15px; align-items:flex-end;">
+                        <div class="form-group" style="flex:2; text-align:left;">
+                            <label style="color:#94a3b8; font-size:14px; margin-bottom:5px; display:block;">Set Adı
+                                <span style="color:#ef4444">*</span></label>
+                            <input type="text" id="setNameInput" placeholder="Örn: 6. Sınıf Ünite 1"
+                                style="width:100%; box-sizing:border-box; padding:10px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid var(--glass-border); border-radius:5px;">
+                        </div>
+                        <div class="form-group" style="flex:1; text-align:left;">
+                            <label style="color:#94a3b8; font-size:14px; margin-bottom:5px; display:block;">Kademe /
+                                Seviye <span style="color:#ef4444">*</span></label>
+                            <select id="setKademeSelect"
+                                style="width:100%; padding:10px; background:rgba(15,23,42,0.8); color:#fff; border:1px solid var(--glass-border); border-radius:5px;">
+                                <option value="İlkokul">İlkokul</option>
+                                <option value="Ortaokul" selected>Ortaokul</option>
+                                <option value="Lise">Lise</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1; text-align:left;">
+                            <label style="color:#94a3b8; font-size:14px; margin-bottom:5px; display:block;">Sınıf <span
+                                    style="color:#ef4444">*</span></label>
+                            <select id="setClassGradeSelect"
+                                style="width:100%; padding:10px; background:rgba(15,23,42,0.8); color:#fff; border:1px solid var(--glass-border); border-radius:5px;">
+                                <option value="">Sınıf Seçiniz</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-bottom:15px; align-items:flex-end;">
+                        <div class="form-group" style="flex:1; text-align:left;">
+                            <label style="color:#94a3b8; font-size:14px; margin-bottom:5px; display:block;">Ders <span
+                                    style="color:#ef4444">*</span></label>
+                            <input type="text" id="setLessonInput" list="lessonSuggestions" placeholder="Örn: İngilizce"
+                                style="width:100%; box-sizing:border-box; padding:10px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid var(--glass-border); border-radius:5px;">
+                        </div>
+                        <div class="form-group" style="flex:1; text-align:left;">
+                            <label style="color:#94a3b8; font-size:14px; margin-bottom:5px; display:block;">Konu / Ünite
+                                <span style="color:#ef4444">*</span></label>
+                            <input type="text" id="setTopicInput" placeholder="Örn: Unit 1"
+                                style="width:100%; box-sizing:border-box; padding:10px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid var(--glass-border); border-radius:5px;">
+                        </div>
+                        <div id="questionTypePreference" class="form-group"
+                            style="flex:1; text-align:left; display:none;">
+                            <label style="color:#94a3b8; font-size:14px; margin-bottom:5px; display:block;">Soru
+                                Türü</label>
+                            <select id="setSubTypeSelect"
+                                onchange="window.updateTemplateUI && window.updateTemplateUI()"
+                                style="width:100%; padding:10px; background:rgba(15,23,42,0.8); color:#fff; border:1px solid var(--glass-border); border-radius:5px;">
+                                <option value="coktan_secmeli">Çoktan Seçmeli (Test)</option>
+                                <option value="acik_uclu">Açık Uçlu (Klasik)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group"
+                        style="display:flex; align-items:center; gap:10px; margin-bottom:15px; text-align:left;">
+                        <input type="checkbox" id="isPublicCheck" checked style="width:18px; height:18px;">
+                        <label for="isPublicCheck" style="margin:0; font-size:13px; color:#cbd5e1;">Bu Seti "GamEdu
+                            Keşfet"te paylaş.</label>
+                    </div>
+
+                    <div id="excelInputArea"
+                        style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; border:1px dashed var(--glass-border); text-align:left;">
+                        <div id="templateGuide"
+                            style="margin-bottom:10px; font-size:12px; color:#a78bfa; background:rgba(139,92,246,0.1); padding:10px; border-radius:5px;">
+                        </div>
+                        <textarea id="setDataInput" rows="5"
+                            placeholder="Excel alanlarını (başlıksız) kopyalayıp buraya CTR+V yapın..."
+                            style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); color:#fff; border:1px solid var(--glass-border); border-radius:5px; padding:10px; margin-bottom:10px;"></textarea>
+                        <button id="saveSetBtn" class="login-btn" style="width:100%; background:#10b981;">Buluta
+                            Kaydet</button>
+                    </div>
+
+                    <div id="manualInputArea"
+                        style="display:none; text-align:left; background:rgba(139,92,246,0.1); padding:15px; border-radius:8px; border:1px dashed #8b5cf6;">
+                        <p style="font-size:13px; color:#cbd5e1; margin-top:0;">Boş bir set oluşturup daha sonra
+                            içerisine liste halinde veriler girebilirsiniz.</p>
+                        <button id="createEmptySetBtn" class="login-btn"
+                            style="width:100%; background:#8b5cf6; font-size:1rem;">➕ Yeni Boş Set Oluştur</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CRUD DÜZENLEME MODALI -->
+    <div id="crudModal" class="ozel-alert-overlay">
+        <div class="ozel-alert-box"
+            style="max-width: 1000px; width:95%; padding: 1rem; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--glass-border); display:flex; flex-direction:column;">
+            <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; color: #60a5fa; display:flex; gap:8px; align-items:center;">
+                        <span id="crudModalTitle" style="font-size:1.3rem;">Yükleniyor...</span>
+                        <button id="editSetTitleBtn"
+                            style="background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#60a5fa; border-radius:4px; padding:2px 6px; cursor:pointer;"
+                            title="Set Adını Düzenle">✏️</button>
+
+                        <button type="button" id="showAddFormBtn" class="action-btn"
+                            style="background: #10b981; padding: 4px 8px; font-size: 0.8rem; margin-left:10px;">➕ Öğe
+                            Ekle</button>
+                        <button type="button" id="deleteEntireSetBtn" class="action-btn"
+                            style="background: #ef4444; padding: 4px 8px; font-size: 0.8rem;">🗑️ Seti Sil</button>
+                    </h2>
+                    <button id="closeCrudModal"
+                        style="background: transparent; border: none; font-size: 24px; cursor: pointer; color: #cbd5e1; padding:0;">&times;</button>
+                </div>
+
+                <!-- Global Metadata Edit Fields -->
+                <div id="globalMetadataEdit"
+                    style="display:flex; gap:10px; margin-top:10px; padding:10px; background:rgba(255,255,255,0.05); border-radius:6px; align-items:center; flex-wrap:wrap;">
+                    <span style="color:#a78bfa; font-size:0.85rem; font-weight:bold; white-space:nowrap;">Toplu
+                        Düzenle:</span>
+                    <select id="modalGlobalLevel" class="custom-select"
+                        style="padding:5px; background:rgba(15,23,42,0.8); color:#fff; border:1px solid var(--glass-border); border-radius:4px; font-size:0.85rem;">
+                        <option value="">Kademe Seçin</option>
+                        <option value="İlkokul">İlkokul (1-4)</option>
+                        <option value="Ortaokul">Ortaokul (5-8)</option>
+                        <option value="Lise">Lise (9-12)</option>
+                    </select>
+                    <select id="modalGlobalClass" class="custom-select"
+                        style="padding:5px; background:rgba(15,23,42,0.8); color:#fff; border:1px solid var(--glass-border); border-radius:4px; font-size:0.85rem; min-width:80px;">
+                        <option value="">Sınıf</option>
+                    </select>
+                    <input type="text" id="modalGlobalLesson" list="lessonSuggestions" placeholder="Ders"
+                        style="padding:5px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid var(--glass-border); border-radius:4px; font-size:0.85rem; width:120px;">
+                    <input type="text" id="modalGlobalTopic" placeholder="Ünite / Konu"
+                        style="padding:5px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid var(--glass-border); border-radius:4px; font-size:0.85rem; width:150px;">
+
+                    <button id="saveGlobalMetadataBtn" class="login-btn"
+                        style="background:#8b5cf6; padding:4px 12px; font-size:0.85rem; white-space:nowrap; border:none; border-radius:4px; color:#fff; cursor:pointer;">💾
+                        Seti Güncelle</button>
+                    <span id="globalMetadataStatus"
+                        style="color:#10b981; font-size:0.8rem; margin-left:5px; opacity:0; transition:opacity 0.3s;">Başarılı!</span>
+                </div>
+            </div>
+
+            <!-- TABLO GÖRÜNÜMÜ -->
+            <div id="crudTableSection" style="display: block;">
+                <div class="crud-table-container"
+                    style="max-height: 55vh; overflow-y: auto; overflow-x: auto; text-align: left; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background:rgba(0,0,0,0.5);">
+                    <table class="crud-table"
+                        style="width: 100%; border-collapse: collapse; color:#fff; font-size:0.9rem;">
+                        <thead id="crudTableHeadRow" style="background:rgba(255,255,255,0.1);"></thead>
+                        <tbody id="crudTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Eski Buton Alanı İptal Edildi (Başlığa taşındı) -->
+            </div>
+
+            <!-- FORM GÖRÜNÜMÜ (YENİ ÖĞE EKLEME) -->
+            <div id="crudAddFormSection" class="crud-add-form"
+                style="display:none; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: left; max-height: 65vh; overflow-y: auto;">
+                <h4
+                    style="margin-top: 0; color: #10b981; border-bottom:1px solid rgba(16,185,129,0.3); padding-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <span>➕ Yeni Öğeler Ekle</span>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" id="addRowBtn" class="login-btn"
+                            style="background: #3b82f6; padding: 6px 12px; font-size: 13px;">➕ Satır Ekle</button>
+                        <button type="button" id="crudAddNewItemBtn" class="login-btn"
+                            style="background: #10b981; padding: 6px 12px; font-size: 13px;">✔ Set'e Kaydet</button>
+                        <button id="hideAddFormBtn" type="button"
+                            style="background:transparent; border:none; color:#ef4444; font-size:1rem; cursor:pointer;"
+                            title="İptal / Listeye Dön">✖ İptal</button>
+                    </div>
+                </h4>
+                <div id="dynamicInputsHeader"
+                    style="display:none; font-size:12px; color:#94a3b8; font-weight:bold; margin-bottom:5px; padding-left:5px; border-bottom:1px dashed rgba(255,255,255,0.1); padding-bottom:5px;">
+                </div>
+                <div id="dynamicInputsContainer"
+                    style="display:flex; flex-direction:column; gap:10px; padding-right:10px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MIGRATION MODAL (ONLY FOR aahmetaytekin@gmail.com) -->
+    <div id="migrationModal" class="ozel-alert-overlay" style="display:none; z-index:9999;">
+        <div class="ozel-alert-box"
+            style="width:90%; max-width:800px; padding:20px; background:rgba(15,23,42,0.95); border:1px solid #8b5cf6;">
+            <h3 style="color:#8b5cf6; margin-top:0;">🚀 GamEdu Legacy Veri Aktarım Merkezi</h3>
+            <p style="font-size:14px; color:#cbd5e1; text-align:left;">Tüm WordsPool veya QPool verinizi Google
+                Sheets'ten kopyalayıp aşağıya yapıştırın. Sistem tüm satırları otomatik olarak Kademelere ve Derslere
+                göre ayırıp her biri için "GamEdu - [Kademe] [Ders]" adında Global Setler oluşturacaktır.</p>
+
+            <div style="display:flex; flex-direction:column; gap:10px; text-align:left;">
+                <label style="color:#94a3b8; font-size:13px;">Aktarılacak Havuz Tipi</label>
+                <select id="migType"
+                    style="width:100%; padding:10px; background:rgba(0,0,0,0.5); color:white; border:1px solid #7c3aed; border-radius:5px;">
+                    <option value="wordspool">WordsPool (Kelime Havuzu)</option>
+                    <option value="qpool_test">QPool - Çoktan Seçmeli</option>
+                    <option value="qpool_klasik">QPool - Açık Uçlu (Klasik)</option>
+                </select>
+
+                <textarea id="migData" rows="10"
+                    style="width:100%; background:rgba(0,0,0,0.5); color:white; padding:10px; border:1px solid #475569; border-radius:5px; box-sizing:border-box;"
+                    placeholder="Excel'den tüm veriyi (başlıksız) CTR+V ile yapıştırın..."></textarea>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button id="migStartBtn" class="login-btn" style="background:#10b981; flex:1;">🚀 Aktarımı Başlat ve
+                    Grupla</button>
+                <button onclick="document.getElementById('migrationModal').style.display='none';" class="login-btn"
+                    style="background:#ef4444; flex:1;">İptal</button>
+            </div>
+            <div id="migLog"
+                style="margin-top:15px; font-size:12px; color:#60a5fa; max-height:100px; overflow-y:auto; text-align:left;">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="./config.js"></script>
-    <script src="./js/app.js"></script>
+    <script src="./js/app.js?v=2"></script>
     <script src="./js/bang.js"></script>
     <script src="./js/lingo.js"></script>
     <script src="./js/beecomb.js"></script>
