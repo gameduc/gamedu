@@ -54,38 +54,49 @@ const DictionaryEngine = (function () {
     }
 
     function fetchWords() {
-        const apiUrl = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
-        if (!apiUrl || apiUrl.trim() === '') {
-            // Offline testing fallback
-            state.words = ["APPLE", "BANANA", "COMPUTER", "SCIENCE", "SCHOOL", "TEACHER", "LIBRARY", "STUDY"];
-            startGame();
-            return;
-        }
+        if (typeof database !== 'undefined' && state.config.SelectedSets) {
+            const setIds = state.config.SelectedSets.split(',');
+            if (setIds.length === 0) {
+                if (DOM.wordDisplay) DOM.wordDisplay.textContent = "Seçilen set bulunamadı.";
+                return;
+            }
 
-        const url = new URL(apiUrl);
-        url.searchParams.append('api', 'true');
-        url.searchParams.append('action', 'getDictionaryWords');
-        url.searchParams.append('dictClass', state.config.DictClass || 'Tümü');
-        url.searchParams.append('dictLesson', state.config.DictLesson || 'Tümü');
-        url.searchParams.append('unitStart', state.config.DictUnitStart || 1);
-        url.searchParams.append('unitEnd', state.config.DictUnitEnd || 50);
+            let allWords = [];
+            let promises = setIds.map(id => database.ref('MasterPool/' + id).once('value'));
 
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    if (DOM.wordDisplay) DOM.wordDisplay.textContent = "Hata: " + data.error;
-                } else if (!data || data.length === 0) {
-                    if (DOM.wordDisplay) DOM.wordDisplay.textContent = "Bu kriterlere uygun kelime bulunamadı.";
+            Promise.all(promises).then(snapshots => {
+                snapshots.forEach(snap => {
+                    if (snap.exists()) {
+                        let setData = snap.val();
+                        if (setData.Data && Array.isArray(setData.Data)) {
+                            setData.Data.forEach(item => {
+                                // Wordspool öğelerinde genellikle Word kullanılır, yedek olarak İngilizce/Kelime olabilir.
+                                const val = item.Word || item.EnglishWord || item.word || item.Title || item.QuestionText;
+                                if (val) {
+                                    allWords.push(val.trim().toUpperCase());
+                                }
+                            });
+                        }
+                    }
+                });
+
+                // Benzersiz (Unique) yap ve karıştır
+                allWords = [...new Set(allWords)].sort(() => 0.5 - Math.random());
+                if (allWords.length === 0) {
+                    if (DOM.wordDisplay) DOM.wordDisplay.textContent = "Bu setlerde kelime bulunamadı.";
                 } else {
-                    state.words = data;
+                    state.words = allWords;
                     startGame();
                 }
-            })
-            .catch(err => {
-                if (DOM.wordDisplay) DOM.wordDisplay.textContent = "Bağlantı Hatası!";
+            }).catch(err => {
+                if (DOM.wordDisplay) DOM.wordDisplay.textContent = "Firebase Hatası: " + err.message;
                 console.error(err);
             });
+        } else {
+            // Offline testing fallback veya API bağlantısı yoksa
+            state.words = ["APPLE", "BANANA", "COMPUTER", "SCIENCE", "SCHOOL", "TEACHER", "LIBRARY", "STUDY"];
+            startGame();
+        }
     }
 
     function setupScoresUI() {
