@@ -90,13 +90,21 @@ function updateGameUI(state) {
         // Tekrarlanan kelimeler için de ipucu varsa göster (Açık/Kapalı Toggle'a göre opacity çalışır)
         const currentWordObj = state.preparedWordList ? state.preparedWordList[state.currentWordIndex] : null;
         if (wordInfo) {
-            wordInfo.textContent = (currentWordObj && currentWordObj.Clue) ? currentWordObj.Clue : '';
+            if (currentWordObj && currentWordObj.Clue) {
+                wordInfo.innerHTML = currentWordObj.Clue.startsWith('http') ? `<img src="${currentWordObj.Clue}" style="max-height:150px; border-radius:8px; margin-top:10px;">` : currentWordObj.Clue;
+            } else {
+                wordInfo.innerHTML = '';
+            }
         }
     } else {
         // Normal kelimelerde ipucu (Clue) varsa Info alanına yazdır.
         const currentWordObj = state.preparedWordList ? state.preparedWordList[state.currentWordIndex] : null;
         if (wordInfo) {
-            wordInfo.textContent = (currentWordObj && currentWordObj.Clue) ? currentWordObj.Clue : '';
+            if (currentWordObj && currentWordObj.Clue) {
+                wordInfo.innerHTML = currentWordObj.Clue.startsWith('http') ? `<img src="${currentWordObj.Clue}" style="max-height:150px; border-radius:8px; margin-top:10px;">` : currentWordObj.Clue;
+            } else {
+                wordInfo.innerHTML = '';
+            }
         }
     }
 
@@ -223,3 +231,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
