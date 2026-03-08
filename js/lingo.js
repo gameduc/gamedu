@@ -33,36 +33,135 @@ const LingoEngine = {
                 const checkedValues = Array.from(document.querySelectorAll(`input[name="${setting.SettingName}"]:checked`))
                     .map(cb => cb.value);
                 acc[setting.SettingName] = checkedValues.join(',');
+            } else if (setting.Type === 'toggle') {
+                const hiddenInput = document.querySelector(`input[type="hidden"][name="${setting.SettingName}"]`);
+                acc[setting.SettingName] = hiddenInput ? hiddenInput.value : (el ? el.value : setting.DefaultValue);
             } else if (el) {
                 acc[setting.SettingName] = el.value;
             }
             return acc;
         }, {});
 
-        const apiUrl = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
-        if (apiUrl && apiUrl.trim() !== '') {
-            fetch(`${apiUrl}?api=true&action=getInitialLingoState&sheetName=${encodeURIComponent(sheetName)}&formData=${encodeURIComponent(JSON.stringify(formData))}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.error) {
-                        showOzelAlert("Lingo başlatılamadı: " + data.error, "hata");
-                        return;
-                    }
-                    this.startGame(data);
-                })
-                .catch(err => showOzelAlert("Bağlantı hatası: " + err, "hata"));
+        // OFFLINE FIREBASE INTERCEPTOR
+        if (typeof database !== 'undefined') {
+            this.prepareFirebaseGame(formData);
         } else {
-            setTimeout(() => {
-                this.startGame({
-                    winningPoints: 1000,
-                    groupNames: ['A', 'B'],
-                    wordList: [
-                        { Word: 'ELMA', Length: 4, Player: 'A', Quota: 1 },
-                        { Word: 'ARMUT', Length: 5, Player: 'B', Quota: 1 }
-                    ]
-                });
-            }, 500);
+            showOzelAlert("Veritabanı bağlantısı yok. Lütfen sayfayı yenileyin.", "hata");
         }
+    },
+
+    prepareFirebaseGame: function (config) {
+        let targetLevel = config.GlobalLevelFilter || "Tümü";
+        let targetLesson = config.GlobalLessonFilter || "Tümü";
+        let classGrades = config.ClassGrades ? config.ClassGrades.split(',') : [];
+        let numGroups = parseInt(config.NumGroups) || 2;
+        let w4Count = parseInt(config.WordLength4) || 0;
+        let w5Count = parseInt(config.WordLength5) || 0;
+        let w6Count = parseInt(config.WordLength6) || 0;
+
+        // Fetch all wordspools
+        database.ref('MasterPool').orderByChild('Type').equalTo('wordspool').once('value')
+            .then(snap => {
+                let validWords = [];
+                snap.forEach(child => {
+                    let set = child.val();
+                    let setLevel = set.GlobalLevel || "Tümü";
+                    let setLesson = set.GlobalLesson || "Tümü";
+                    let setClass = set.GlobalClass || "Tümü";
+
+                    // Filter Preference
+                    if (config.SetPreference === 'Benim Setlerim' && (!currentUser || set.Author_ID !== currentUser.uid)) return;
+                    if (config.SetPreference === 'GamEdu Keşfet' && set.IsPublic === false) return;
+
+                    // Ortak logic for Lesson
+                    let lessonMatch = false;
+                    if (targetLesson === "Tümü" || targetLesson === "Ortak") lessonMatch = true;
+                    else if (setLesson === targetLesson) lessonMatch = true;
+
+                    if (!lessonMatch) return;
+
+                    // Kademe match
+                    if (targetLevel !== "Tümü" && setLevel !== targetLevel) return;
+
+                    // Class logic with "Ortak"
+                    let classMatch = false;
+                    if (classGrades.length === 0 || classGrades.includes("Ortak") || classGrades.includes("Tümü")) classMatch = true; // Ortak checks EVERYTHING within the Kademe
+                    else if (classGrades.includes(setClass)) classMatch = true;
+
+                    if (!classMatch) return;
+
+                    // Extractor
+                    if (set.Data && Array.isArray(set.Data)) {
+                        set.Data.forEach(item => {
+                            if (item && item.Word) {
+                                let w = item.Word.trim().toLocaleUpperCase('tr-TR');
+                                if (w.length >= 4 && w.length <= 6 && !w.includes(' ')) {
+                                    validWords.push(w);
+                                }
+                            }
+                        });
+                    }
+                });
+
+                validWords = [...new Set(validWords)];
+
+                let bucket4 = validWords.filter(w => w.length === 4);
+                let bucket5 = validWords.filter(w => w.length === 5);
+                let bucket6 = validWords.filter(w => w.length === 6);
+
+                let totalWordsPerGroup = w4Count + w5Count + w6Count;
+                let needed4 = w4Count * numGroups;
+                let needed5 = w5Count * numGroups;
+                let needed6 = w6Count * numGroups;
+
+                if (bucket4.length < needed4 || bucket5.length < needed5 || bucket6.length < needed6) {
+                    showOzelAlert(`Havuzda yeterli harf limitinde kelime bulunamadı!<br>Gereken(Bulunan): 4H: ${needed4}(${bucket4.length}), 5H: ${needed5}(${bucket5.length}), 6H: ${needed6}(${bucket6.length})`, "hata");
+                    return;
+                }
+
+                bucket4 = bucket4.sort(() => 0.5 - Math.random());
+                bucket5 = bucket5.sort(() => 0.5 - Math.random());
+                bucket6 = bucket6.sort(() => 0.5 - Math.random());
+
+                let selected4 = bucket4.slice(0, needed4);
+                let selected5 = bucket5.slice(0, needed5);
+                let selected6 = bucket6.slice(0, needed6);
+
+                let finalWordList = [];
+                let groupNames = Array.from({ length: numGroups }, (_, i) => String.fromCharCode(65 + i));
+
+                if (config.LingoFlow === 'Blok') {
+                    for (let g = 0; g < numGroups; g++) {
+                        let groupPlayer = groupNames[g];
+                        for (let i = 0; i < w4Count; i++) finalWordList.push({ Word: selected4.pop(), Length: 4, Player: groupPlayer, Quota: w4Count });
+                        for (let i = 0; i < w5Count; i++) finalWordList.push({ Word: selected5.pop(), Length: 5, Player: groupPlayer, Quota: w5Count });
+                        for (let i = 0; i < w6Count; i++) finalWordList.push({ Word: selected6.pop(), Length: 6, Player: groupPlayer, Quota: w6Count });
+                    }
+                } else {
+                    let groupsWordBuckets = {};
+                    for (let g = 0; g < numGroups; g++) {
+                        groupsWordBuckets[groupNames[g]] = [];
+                        for (let i = 0; i < w4Count; i++) groupsWordBuckets[groupNames[g]].push({ Word: selected4.pop(), Length: 4, Player: groupNames[g], Quota: w4Count });
+                        for (let i = 0; i < w5Count; i++) groupsWordBuckets[groupNames[g]].push({ Word: selected5.pop(), Length: 5, Player: groupNames[g], Quota: w5Count });
+                        for (let i = 0; i < w6Count; i++) groupsWordBuckets[groupNames[g]].push({ Word: selected6.pop(), Length: 6, Player: groupNames[g], Quota: w6Count });
+                    }
+                    for (let i = 0; i < totalWordsPerGroup; i++) {
+                        for (let g = 0; g < numGroups; g++) {
+                            finalWordList.push(groupsWordBuckets[groupNames[g]][i]);
+                        }
+                    }
+                }
+
+                this.startGame({
+                    gameConfig: { Countdown: config.Countdown || 15 },
+                    groupNames: groupNames,
+                    wordList: finalWordList
+                });
+
+            }).catch(err => {
+                console.error(err);
+                showOzelAlert("Firebase Lingo Hatası: " + err.message, "hata");
+            });
     },
 
     startGame: function (data) {
