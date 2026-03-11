@@ -1,6 +1,12 @@
-﻿// ==========================================
+// ==========================================
 // 7. CRUD MODAL İŞLEMLERİ (READ, UPDATE, DELETE)
 // ==========================================
+
+// Görsel Önizleme Fonksiyonu (Quote hatasını önlemek için ayrıldı)
+window.previewImage = function(url) {
+    if (!url) return;
+    showOzelAlert(`<img src="${url}" style="max-width:100%; max-height:70vh; display:block; margin:0 auto; border-radius:8px;">`, 'none');
+};
 
 // --- YENİ EKLENEN TOPLU DÜZENLEME (MEB FİLTRESİ) ---
 window.populateModalMebFilters = function () {
@@ -357,6 +363,7 @@ function renderCrudTable(dataArray, type) {
             <th>D Şıkkı</th>
             <th>E Şıkkı</th>`}
             <th>Doğru Cev.</th>
+            <th>Görsel URL</th>
             ${window.isCrudReadOnly ? '' : '<th>Aksiyonlar</th>'}
         `;
     } else {
@@ -381,7 +388,7 @@ function renderCrudTable(dataArray, type) {
             let isAcikUclu = currentSetData ? currentSetData.SubType === 'acik_uclu' : false;
             tr.innerHTML = `
                 <td>${item.QNumber || ''}</td>
-                <td>${item.QuestionText || ''} ${item.ImgURL ? ' <a href="' + item.ImgURL + '" target="_blank">📷</a>' : ''}</td>
+                <td>${item.QuestionText || ''}</td>
                 <td>${item.Clue && item.Clue.startsWith('http') ? '<a href="' + item.Clue + '" target="_blank">📷 (Aç)</a>' : (item.Clue || '-')}</td>
                 ${isAcikUclu ? '' : `
                 <td>${item.OptionA || ''}</td>
@@ -390,6 +397,7 @@ function renderCrudTable(dataArray, type) {
                 <td>${item.OptionD || ''}</td>
                 <td>${item.OptionE || ''}</td>`}
                 <td style="font-weight:bold; color:#10b981;">${item.CorrectAnswer || ''}</td>
+                <td>${item.ImgURL ? `<button class="action-btn" style="background:#0284c7; padding:2px 8px; font-size:11px;" onclick="previewImage('${item.ImgURL}')">👁️ Gör</button>` : '-'}</td>
                 ${window.isCrudReadOnly ? '' : `
                 <td style="white-space:nowrap;">
                     <button class="action-btn btn-edit" onclick="editRow(${index}, 'qpool')">✎ Düzenle</button>
@@ -403,7 +411,7 @@ function renderCrudTable(dataArray, type) {
                 <td>${item.Clue || ''}</td>
                 <td>${item.MeaningTR || '-'}</td>
                 <td>${item.MeaningEN || '-'}</td>
-                <td>${item.ImgURL ? '<a href="' + item.ImgURL + '" target="_blank">Aç</a>' : '-'}</td>
+                <td>${item.ImgURL ? `<button class="action-btn" style="background:#0284c7; padding:2px 8px; font-size:11px;" onclick="previewImage('${item.ImgURL}')">👁️ Gör</button>` : '-'}</td>
                 ${window.isCrudReadOnly ? '' : `
                 <td style="white-space:nowrap;">
                     <button class="action-btn btn-edit" onclick="editRow(${index}, 'wordspool')">✎ Düzenle</button>
@@ -460,6 +468,7 @@ window.editRow = function (rowIndex, type) {
             <td><input type="text" id="e_D_${rowIndex}" value="${item.OptionD || ''}"></td>
             <td><input type="text" id="e_E_${rowIndex}" value="${item.OptionE || ''}"></td>`}
             <td><input type="text" id="e_Ans_${rowIndex}" value="${item.CorrectAnswer || ''}" style="width:60px;"></td>
+            <td><input type="text" id="e_I_Q_${rowIndex}" value="${item.ImgURL || ''}" style="width:100px;" placeholder="URL"></td>
             <td style="white-space:nowrap;">
                 <button class="action-btn btn-save-inline" onclick="saveEditedRow(${rowIndex}, 'qpool')" style="background:#10b981; color:#fff; font-weight:bold; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">✔ Kaydet</button>
                 <button class="action-btn btn-cancel-inline" onclick="cancelEdit(${rowIndex}, 'qpool')" style="background:#ef4444; color:#fff; font-weight:bold; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-left:4px;">✖ İptal</button>
@@ -497,7 +506,7 @@ window.saveEditedRow = function (rowIndex, type) {
             QuestionText: document.getElementById('e_Qt_' + rowIndex).value.trim(),
             Clue: document.getElementById('e_Clue_' + rowIndex).value.trim(),
             CorrectAnswer: document.getElementById('e_Ans_' + rowIndex).value.trim(),
-            ImgURL: currentSetData.Data[rowIndex].ImgURL || ""
+            ImgURL: document.getElementById('e_I_Q_' + rowIndex).value.trim()
         };
         if (!isAcikUclu) {
             updatedObj.OptionA = document.getElementById('e_A_' + rowIndex).value.trim();
