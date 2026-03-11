@@ -22,7 +22,8 @@ window.showOzelAlert = function (message, type, callback = null) {
     if (type === 'hata') { iconEl.innerHTML = '❌'; iconEl.style.color = '#ef4444'; }
     else if (type === 'bilgi') { iconEl.innerHTML = 'ℹ️'; iconEl.style.color = '#3b82f6'; }
     else if (type === 'onay' || type === 'evethayir') { iconEl.innerHTML = '❓'; iconEl.style.color = '#eab308'; }
-    else { iconEl.innerHTML = '🔔'; iconEl.style.color = '#22c55e'; }
+    else if (type === 'none') { iconEl.innerHTML = ''; }
+    else { iconEl.innerHTML = ''; } // Zil ikonu kaldırıldı, varsayılan boş
 
     if (type === 'evethayir') {
         const btnEvet = document.createElement('button');
@@ -1459,27 +1460,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         startBtn.textContent = startBtnText; startBtn.disabled = false; return;
                     }
                     const igwPool = ['BANG!', 'Give +1 Right', 'Give +1 Left', 'Take +1 Right', 'Take +1 Left'];
-                    const shuffled = rawWords.sort(() => Math.random() - 0.5);
-                    // IGW havuzunu karıştır ve sonsuz döngü için tekrarla
-                    let igwDeck = [...igwPool].sort(() => Math.random() - 0.5);
-                    let igwIdx = 0;
-                    const igwProb = igwRate / 100; // Olasılık eşiği (örn. 0.15)
+                    
                     let preparedList = [];
-                    let sinceLastIgw = 0; // Son özel karttan bu yana geçen normal kelime sayısı
-
-                    shuffled.forEach((item) => {
-                        // Minimum 2 normal kelime boşluğu → tahmin edilemezlik + çok sık gelmeyi önler
-                        const canInsert = sinceLastIgw >= 2;
-                        if (canInsert && igwProb > 0 && Math.random() < igwProb) {
-                            // Önce özel kartı ekle, ardından normal kelimeyi
-                            preparedList.push({ Word: igwDeck[igwIdx % igwDeck.length], Clue: '', isGameInWord: true });
-                            igwIdx++;
-                            // Havuz tükendikçe yeniden karıştır
-                            if (igwIdx % igwDeck.length === 0) igwDeck = [...igwPool].sort(() => Math.random() - 0.5);
-                            sinceLastIgw = 0;
-                        }
-                        preparedList.push({ Word: item.Word, Clue: item.Clue, TurkishMeaning: item.TurkishMeaning, EnglishMeaning: item.EnglishMeaning, ImageUrl: item.ImageUrl, isGameInWord: false });
-                        sinceLastIgw++;
+                    // Aksiyon kartlarını ekle
+                    igwPool.forEach(act => {
+                        preparedList.push({ Word: act, Clue: '', isGameInWord: true });
+                    });
+                    // Normal kelimeleri ekle
+                    rawWords.forEach(item => {
+                        preparedList.push({ 
+                            Word: item.Word, 
+                            Clue: item.Clue, 
+                            TurkishMeaning: item.TurkishMeaning, 
+                            EnglishMeaning: item.EnglishMeaning, 
+                            ImageUrl: item.ImageUrl, 
+                            isGameInWord: false 
+                        });
                     });
 
                     window.bangOfflineMode = true;
