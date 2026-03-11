@@ -5,52 +5,73 @@
 // ============================================================
 const BangEngine = {
     state: {
-        preparedWordList: [],
-        currentWordIndex: 0,
+        sourceWords: [],     // Temiz kelime havuzu
+        actionCards: [],     // Aksiyon kartları (BANG!, Give vb.)
+        seenWords: [],       // Çıkmış kelimeler
+        unseenWords: [],     // Henüz çıkmamış kelimeler
+        currentWordObj: null,
         groupNames: [],
         scores: {},
         activeGroup: '',
         winningPoints: 10,
-        isGameOver: false
+        isGameOver: false,
+        seenWordsCount: {} 
     },
 
     startOffline: function (wordList, groupNames, winningPoints) {
-        this.state.preparedWordList = wordList;
-        this.state.currentWordIndex = 0;
+        // wordList içinden Action ve Normal kelimeleri ayır
+        this.state.sourceWords = wordList.filter(w => !w.isGameInWord);
+        this.state.actionCards = wordList.filter(w => w.isGameInWord);
+        
+        // Havuzları hazırla
+        this.state.seenWords = [];
+        this.state.unseenWords = [...this.state.sourceWords];
+        this.state.seenWordsCount = {};
+
         this.state.groupNames = groupNames;
         this.state.winningPoints = winningPoints;
         this.state.isGameOver = false;
         this.state.activeGroup = groupNames[0] || 'A';
         this.state.scores = {};
         groupNames.forEach(g => this.state.scores[g] = 0);
+        
+        // İlk kelimeyi seç
+        this._pickNextWord();
+
+        // UI Başlıklarını Güncelle
+        const gameTitle = document.getElementById('playingGameTitle');
+        if (gameTitle) gameTitle.textContent = 'Bang!';
+        const winDisplay = document.getElementById('winningPointsDisplay');
+        if (winDisplay) winDisplay.textContent = winningPoints;
+
         const wd = document.getElementById('currentWordDisplay');
         if (wd) wd.dataset.alertShown = 'false';
         this.renderState();
     },
 
     buildState: function () {
-        const wordObj = this.state.preparedWordList[this.state.currentWordIndex];
-        if (!wordObj) {
+        const wordObj = this.state.currentWordObj;
+        if (!wordObj || this.state.isGameOver) {
             return {
-                currentWord: 'Oyun Bitti!', currentWordIsGameInWord: false,
+                currentWord: this.state.isGameOver ? 'Oyun Bitti!' : 'Kelime Bekleniyor...', 
+                currentWordIsGameInWord: false,
                 currentWordIsRepeated: false, groupNames: this.state.groupNames,
                 scores: this.state.scores, activeGroup: this.state.activeGroup,
-                preparedWordList: this.state.preparedWordList,
-                currentWordIndex: this.state.currentWordIndex,
-                message: '', gameEnded: true, winner: this._topScorer()
+                message: '', gameEnded: this.state.isGameOver, winner: this.state.isGameOver ? this._topScorer() : null
             };
         }
-        const usedWords = this.state.preparedWordList
-            .slice(0, this.state.currentWordIndex)
-            .filter(w => !w.isGameInWord).map(w => w.Word);
-        const isRepeated = !wordObj.isGameInWord && usedWords.includes(wordObj.Word);
+        const wordKey = wordObj.Word.trim().toLowerCase();
+        const isRepeated = !wordObj.isGameInWord && (this.state.seenWordsCount[wordKey] > 1);
         return {
-            currentWord: wordObj.Word, currentWordIsGameInWord: wordObj.isGameInWord,
-            currentWordIsRepeated: isRepeated, groupNames: this.state.groupNames,
-            scores: this.state.scores, activeGroup: this.state.activeGroup,
-            preparedWordList: this.state.preparedWordList,
-            currentWordIndex: this.state.currentWordIndex,
-            message: '', gameEnded: this.state.isGameOver,
+            currentWord: wordObj.Word, 
+            currentWordIsGameInWord: wordObj.isGameInWord,
+            currentWordIsRepeated: isRepeated, 
+            groupNames: this.state.groupNames,
+            scores: this.state.scores, 
+            activeGroup: this.state.activeGroup,
+            currentWordObj: this.state.currentWordObj,
+            message: '', 
+            gameEnded: this.state.isGameOver,
             winner: this.state.isGameOver ? this._topScorer() : null
         };
     },
@@ -68,49 +89,115 @@ const BangEngine = {
     },
 
     _advanceWord: function (groupSkip) {
-        this.state.currentWordIndex++;
-        if (this.state.currentWordIndex >= this.state.preparedWordList.length) this.state.isGameOver = true;
+        this._pickNextWord();
         this._nextGroup(groupSkip);
     },
 
     handleAction: function (actionType, activeGroup) {
         if (this.state.isGameOver) return;
         if (activeGroup && this.state.groupNames.includes(activeGroup)) this.state.activeGroup = activeGroup;
-        const wordObj = this.state.preparedWordList[this.state.currentWordIndex];
+        
+        const wordObj = this.state.currentWordObj;
         const groups = this.state.groupNames;
         const curIdx = groups.indexOf(this.state.activeGroup);
         const rightGroup = groups[(curIdx + 1) % groups.length];
         const leftGroup = groups[(curIdx - 1 + groups.length) % groups.length];
 
+        const isActionWord = wordObj && wordObj.isGameInWord;
+
         if (actionType === 'plus') {
+            if (isActionWord) return; // Aksiyon varken + çalışmaz
+            // 1 Puan kazanır, kelime değişir, SIRA DEĞİŞMEZ.
             this.state.scores[this.state.activeGroup]++;
             if (this.state.scores[this.state.activeGroup] >= this.state.winningPoints) {
                 this.state.isGameOver = true;
-                this.state.currentWordIndex++;
-                this.renderState(); return;
             }
-            this._advanceWord(2);
+            this._pickNextWord();
         } else if (actionType === 'minus') {
-            this.state.scores[this.state.activeGroup] = Math.max(0, this.state.scores[this.state.activeGroup] - 1);
-            this._advanceWord(1);
+            if (isActionWord) return; // Aksiyon varken - çalışmaz
+            // 1 Puan kaybeder, kelime değişir, SIRADAKİ GRUBA geçer.
+            this.state.scores[this.state.activeGroup]--;
+            this._pickNextWord();
+            this._nextGroup(1);
         } else if (actionType === 'changeWord') {
-            this._advanceWord(2);
+            if (isActionWord) return; // Aksiyon varken "Sıradaki Kelime" çalışmaz
+            // Puan değişmez, kelime değişir, AKTİF GRUP +2 atlar.
+            this._pickNextWord();
+            this._nextGroup(2);
         } else if (actionType === 'action') {
+            if (!isActionWord) return; // Normal kelime varken Aksiyon butonu çalışmaz (opsiyonel ama güvenli)
             const word = wordObj ? wordObj.Word : '';
             if (word === 'BANG!') {
+                // Puan sıfırlanır, kelime değişir, SIRADAKİ GRUBA geçer.
                 this.state.scores[this.state.activeGroup] = 0;
-            } else if (word === 'Give +1 Right') {
-                if (this.state.scores[this.state.activeGroup] > 0) { this.state.scores[this.state.activeGroup]--; this.state.scores[rightGroup]++; }
-            } else if (word === 'Give +1 Left') {
-                if (this.state.scores[this.state.activeGroup] > 0) { this.state.scores[this.state.activeGroup]--; this.state.scores[leftGroup]++; }
-            } else if (word === 'Take +1 Right') {
-                if (this.state.scores[rightGroup] > 0) { this.state.scores[rightGroup]--; this.state.scores[this.state.activeGroup]++; }
-            } else if (word === 'Take +1 Left') {
-                if (this.state.scores[leftGroup] > 0) { this.state.scores[leftGroup]--; this.state.scores[this.state.activeGroup]++; }
+                this._pickNextWord();
+                this._nextGroup(1);
+            } else {
+                // GIVE/TAKE: Puan değişir, kelime değişir, SIRA DEĞİŞMEZ.
+                if (word === 'Give +1 Right') {
+                    this.state.scores[this.state.activeGroup]--; 
+                    this.state.scores[rightGroup]++;
+                } else if (word === 'Give +1 Left') {
+                    this.state.scores[this.state.activeGroup]--; 
+                    this.state.scores[leftGroup]++;
+                } else if (word === 'Take +1 Right') {
+                    this.state.scores[rightGroup]--; 
+                    this.state.scores[this.state.activeGroup]++;
+                } else if (word === 'Take +1 Left') {
+                    this.state.scores[leftGroup]--; 
+                    this.state.scores[this.state.activeGroup]++;
+                }
+                this._pickNextWord();
             }
-            this._advanceWord(1);
         }
+
         this.renderState();
+    },
+
+    _pickNextWord: function() {
+        if (this.state.isGameOver) return;
+
+        let RAND = Math.random();
+        let selectedWord = null;
+
+        // 1. %15 Aksiyon Kartı?
+        if (RAND < 0.15 && this.state.actionCards.length > 0) {
+            selectedWord = this.state.actionCards[Math.floor(Math.random() * this.state.actionCards.length)];
+        } 
+        else {
+            // 2. Normal Kelime (%85)
+            // Bu %85 içinde %25 Çıkmış Kelime, %75 Yeni Kelime (Oran: 1/4)
+            let RAND2 = Math.random();
+            if (RAND2 < 0.25 && this.state.seenWords.length > 0) {
+                // Çıkmışlardan seç
+                selectedWord = this.state.seenWords[Math.floor(Math.random() * this.state.seenWords.length)];
+            } else {
+                // Yeni kelimelerden seç
+                if (this.state.unseenWords.length === 0) {
+                    // Tüm kelimeler bittiyse havuzu tazele ama seenWordsCount'u sıfırlama (renk için)
+                    this.state.unseenWords = [...this.state.sourceWords];
+                    this.state.seenWords = [];
+                }
+                
+                let idx = Math.floor(Math.random() * this.state.unseenWords.length);
+                selectedWord = this.state.unseenWords[idx];
+                
+                // Seçileni unseen'den çıkar, seen'e ekle
+                this.state.unseenWords.splice(idx, 1);
+                this.state.seenWords.push(selectedWord);
+            }
+        }
+
+        this.state.currentWordObj = selectedWord;
+        this._markCurrentWordSeen();
+    },
+
+    _markCurrentWordSeen: function() {
+        const wordObj = this.state.currentWordObj;
+        if (wordObj && !wordObj.isGameInWord) {
+            const wordKey = wordObj.Word.trim().toLowerCase();
+            this.state.seenWordsCount[wordKey] = (this.state.seenWordsCount[wordKey] || 0) + 1;
+        }
     }
 };
 
@@ -138,7 +225,7 @@ function updateGameUI(state) {
 
     const wordDisplay = document.getElementById('currentWordDisplay');
     const displayMode = window.bangDisplayMode || 'Kelime';
-    const wordObj = state.preparedWordList ? state.preparedWordList[state.currentWordIndex] : null;
+    const wordObj = state.currentWordObj;
 
     // Aksiyon kartları (BANG!, Give vs.) her zaman metin olarak göster
     if (state.currentWordIsGameInWord || state.gameEnded) {
@@ -224,9 +311,10 @@ function updateGameUI(state) {
     } else if (state.currentWordIsRepeated) {
         wordDisplay.classList.remove('word-base');
         wordDisplay.classList.add('word-repeated');
+        wordDisplay.style.color = '#ef4444'; // CSS override garantisi
 
         // Tekrarlanan kelimeler için de ipucu varsa göster (Açık/Kapalı Toggle'a göre opacity çalışır)
-        const currentWordObj = state.preparedWordList ? state.preparedWordList[state.currentWordIndex] : null;
+        const currentWordObj = wordObj;
         if (wordInfo) {
             if (currentWordObj && currentWordObj.Clue) {
                 wordInfo.innerHTML = currentWordObj.Clue.startsWith('http') ? `<img src="${currentWordObj.Clue}" style="max-height:150px; border-radius:8px; margin-top:10px;">` : currentWordObj.Clue;
@@ -236,7 +324,8 @@ function updateGameUI(state) {
         }
     } else {
         // Normal kelimelerde ipucu (Clue) varsa Info alanına yazdır.
-        const currentWordObj = state.preparedWordList ? state.preparedWordList[state.currentWordIndex] : null;
+        wordDisplay.style.color = ''; // Rengi sıfırla
+        const currentWordObj = wordObj;
         if (wordInfo) {
             if (currentWordObj && currentWordObj.Clue) {
                 wordInfo.innerHTML = currentWordObj.Clue.startsWith('http') ? `<img src="${currentWordObj.Clue}" style="max-height:150px; border-radius:8px; margin-top:10px;">` : currentWordObj.Clue;
