@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // 1. FIREBASE KONFİGÜRASYONU 
 // ==========================================
 console.log("🚀 APP.JS BAŞLADI (Versiyon: CRITICAL DEBUG - v3)");
@@ -211,13 +211,39 @@ function updateUI() {
         if (authOverlay) authOverlay.classList.remove('active');
         if (userEmailDisplay) userEmailDisplay.textContent = currentUser.email;
 
-        const adminMigrateBtn = document.getElementById('adminMigrateBtn');
-        if (adminMigrateBtn) {
-            if (currentUser.email === 'aahmetaytekin@gmail.com') {
-                adminMigrateBtn.style.display = 'inline-block';
-            } else {
-                adminMigrateBtn.style.display = 'none';
-            }
+        const userShortName = document.getElementById('userShortName');
+        const modalProfileShortName = document.getElementById('modalProfileShortName');
+        const modalUserEmail = document.getElementById('modalUserEmail');
+        const profileNicknameInput = document.getElementById('profileNicknameInput');
+
+        if (modalUserEmail) modalUserEmail.textContent = currentUser.email;
+        
+        // Baş harf ikonlarını güncelle
+        let initial = currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : (currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?');
+        if (userShortName) userShortName.textContent = initial;
+        if (modalProfileShortName) modalProfileShortName.textContent = initial;
+
+        const nicknameDisplay = document.getElementById('currentNicknameDisplay');
+        if (nicknameDisplay) nicknameDisplay.textContent = currentUser.displayName || 'İsim Belirtilmemiş';
+
+        if (profileNicknameInput) {
+            profileNicknameInput.value = currentUser.displayName || '';
+        }
+        
+        // Modal her açıldığında düzenleme modunu kapat
+        toggleNicknameEditMode(false);
+
+        // Dashboard modundaysak Navbar'ı gizle
+        const dashboardArea = document.getElementById('dashboardArea');
+        const navbar = document.querySelector('.navbar');
+        const trigger = document.getElementById('navbarTriggerArea');
+        
+        if (dashboardArea && dashboardArea.style.display !== 'none') {
+            if (navbar) navbar.classList.add('hidden-dashboard');
+            if (trigger) trigger.style.display = 'block';
+        } else {
+            if (navbar) navbar.classList.remove('hidden-dashboard');
+            if (trigger) trigger.style.display = 'none';
         }
 
         // Yönetim Paneli Metnine Dönüştür
@@ -246,6 +272,61 @@ function updateUI() {
         }
     }
 }
+
+// Profil Modalı Kontrolü
+window.toggleProfileModal = function() {
+    const modal = document.getElementById('profileModal');
+    if (modal) {
+        if (modal.classList.contains('active')) {
+            modal.classList.remove('active');
+        } else {
+            modal.classList.add('active');
+        }
+    }
+};
+
+
+
+window.toggleNicknameEditMode = function(isEdit) {
+    const displayArea = document.getElementById('nicknameDisplayArea');
+    const editArea = document.getElementById('nicknameEditArea');
+    if (displayArea && editArea) {
+        displayArea.style.display = isEdit ? 'none' : 'flex';
+        editArea.style.display = isEdit ? 'flex' : 'none';
+        
+        if (isEdit) {
+            const input = document.getElementById('profileNicknameInput');
+            if (input) input.focus();
+        }
+    }
+};
+
+window.updateProfileNickname = function() {
+    const input = document.getElementById('profileNicknameInput');
+    if (!input || !currentUser || !isFirebaseInitialized) return;
+
+    const newName = input.value.trim();
+    if (!newName) return showMessage("Lütfen geçerli bir isim girin.", "error");
+
+    // 1. Firebase Auth Profilini Güncelle
+    currentUser.updateProfile({
+        displayName: newName
+    }).then(() => {
+        // Auth nesnesini tazeleyelim ki displayName anında yansısın
+        auth.currentUser.reload().then(() => {
+            currentUser = auth.currentUser;
+            if (typeof updateUI === 'function') updateUI(); 
+            if (typeof toggleNicknameEditMode === 'function') toggleNicknameEditMode(false); 
+            
+            showOzelAlert("Profil bilgileriniz başarıyla güncellendi.", "tamam");
+        }).catch(e => {
+            console.error("Reload error:", e);
+            showOzelAlert("İsim güncellendi ancak görsel yenilenemedi: " + e.message, "hata");
+        });
+    }).catch(err => {
+        showOzelAlert("Hata: " + err.message, "hata");
+    });
+};
 
 // Global scope'a ekliyoruz ki HTML'deki onclick erişebilsin
 window.handleNavTeacherBtn = function () {
@@ -338,14 +419,14 @@ function updateTemplateUI() {
             templateGuide.innerHTML = `
                 <strong>Açık Uçlu Soru Seti Excel Sütun Sırası (5 Sütun):</strong><br>
                 <span style="color:#ce3131; font-size:11px;">Not: Kırmızı yazılı başlıkların doldurulması ZORUNLUDUR!</span><br>
-                <code><span style="color:#ce3131;">Soru No</span> | Resim URL | <span style="color:#ce3131;">Soru Metni</span> | İpucu | <span style="color:#ce3131;">Doğru Cevap</span></code>
+                <code><span style="color:#ce3131;">Soru No</span> | <span style="color:#ce3131;">Soru Metni</span> | İpucu | <span style="color:#ce3131;">Doğru Cevap</span> | Resim URL</code>
                 <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına metin veya doğrudan bir görsel linki (http...jpg/png) girebilirsiniz. Görsel linki girerseniz oyunlarda tıklanabilir resim olarak görünür.</p>
             `;
         } else {
             templateGuide.innerHTML = `
                 <strong>Çoktan Seçmeli Soru Seti Excel Sütun Sırası (10 Sütun):</strong><br>
                 <span style="color:#ce3131; font-size:11px;">Not: Kırmızı yazılı başlıkların doldurulması ZORUNLUDUR!</span><br>
-                <code><span style="color:#ce3131;">Soru No</span> | Resim URL | <span style="color:#ce3131;">Soru Metni</span> | İpucu | <span style="color:#ce3131;">A Şıkkı</span> | <span style="color:#ce3131;">B Şıkkı</span> | <span style="color:#ce3131;">C Şıkkı</span> | <span style="color:#ce3131;">D Şıkkı</span> | E Şıkkı | <span style="color:#ce3131;">Doğru Cevap</span></code>
+                <code><span style="color:#ce3131;">Soru No</span> | <span style="color:#ce3131;">Soru Metni</span> | İpucu | <span style="color:#ce3131;">A</span> | <span style="color:#ce3131;">B</span> | <span style="color:#ce3131;">C</span> | <span style="color:#ce3131;">D</span> | E | <span style="color:#ce3131;">Doğru Cevap</span> | Resim URL</code>
                 <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına metin veya doğrudan bir görsel linki (http...jpg/png) girebilirsiniz. Görsel linki girerseniz oyunlarda tıklanabilir resim olarak görünür.</p>
             `;
         }
