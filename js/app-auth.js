@@ -1,4 +1,4 @@
-﻿// ==========================================
+// ==========================================
 // 4. AUTHENTICATION (KAYIT & GİRİŞ) İŞLEMLERİ
 // ==========================================
 if (isFirebaseInitialized) {
@@ -103,11 +103,27 @@ if (isFirebaseInitialized) {
     }
 
     // Çıkış Yap
-    logoutBtn.addEventListener('click', () => {
+    const performLogout = () => {
         auth.signOut().then(() => {
             showMessage("Güvenli bir şekilde çıkış yapıldı.");
+            const profileModal = document.getElementById('profileModal');
+            if (profileModal) profileModal.classList.remove('active');
         });
-    });
+    };
+
+    if (logoutBtn) logoutBtn.addEventListener('click', performLogout);
+    
+    // Modal içindeki Çıkış butonu
+    const modalLogoutBtn = document.getElementById('modalLogoutBtn');
+    if (modalLogoutBtn) modalLogoutBtn.addEventListener('click', performLogout);
+
+    // Modal içindeki İsim Değiştirme butonu
+    const saveNicknameBtn = document.getElementById('saveNicknameBtn');
+    if (saveNicknameBtn) {
+        saveNicknameBtn.addEventListener('click', () => {
+            if (window.updateProfileNickname) window.updateProfileNickname();
+        });
+    }
 
     // Admin Migration İşlemleri
     const adminMigrateBtn = document.getElementById('adminMigrateBtn');
