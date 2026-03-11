@@ -1,4 +1,4 @@
-﻿
+
 // ==========================================
 // 5. MASTERPOOL VERİTABANI İŞLEMLERİ (KAYDET VE OKU)
 // ==========================================
@@ -11,66 +11,61 @@ function parseHibritData(rawData, setType, subType = 'coktan_secmeli', globalLev
     const isAcikUclu = (setType === 'qpool' && subType === 'acik_uclu');
 
     lines.forEach((line, index) => {
-        let rowNum = index + 1; // Satır numarası
+        let rowNum = index + 1;
         if (line.trim() !== "") {
             const parts = line.split('\t');
-
             if (setType === 'qpool') {
-                if (parts.length >= 1) { // Adjusted to 1 because 'Sınıf' is removed from row
-                    let s_no = parts[0] ? parts[0].trim() : "";
-                    let img_url = parts[1] ? parts[1].trim() : "";
-                    let s_text = parts[2] ? parts[2].trim() : "";
-                    let clue = parts[3] ? parts[3].trim() : "";
+                let s_no = parts[0] ? parts[0].trim() : "";
+                let s_text = parts[1] ? parts[1].trim() : "";
+                let clue = parts[2] ? parts[2].trim() : "";
+                let optA = "", optB = "", optC = "", optD = "", optE = "", correctAns = "", img_url = "";
 
-                    let optA = "", optB = "", optC = "", optD = "", optE = "", correctAns = "";
-
-                    if (isAcikUclu) {
-                        correctAns = parts[4] ? parts[4].trim() : (parts[parts.length - 1] ? parts[parts.length - 1].trim() : "");
-                    } else {
-                        optA = parts[4] ? parts[4].trim() : "";
-                        optB = parts[5] ? parts[5].trim() : "";
-                        optC = parts[6] ? parts[6].trim() : "";
-                        optD = parts[7] ? parts[7].trim() : "";
-                        optE = parts[8] ? parts[8].trim() : "";
-                        correctAns = parts[9] ? parts[9].trim() : (parts[parts.length - 1] ? parts[parts.length - 1].trim() : "");
-                    }
-
-                    // Zorunlu alan validasyonları
-                    if (!globalLevel) errors.push(`Satır ${rowNum}: 'Set Kademesi' genel formdan seçilmemiş!`);
-                    if (!globalClass) errors.push(`Satır ${rowNum}: 'Sınıf' genel formdan seçilmemiş!`);
-                    if (!globalLesson) errors.push(`Satır ${rowNum}: 'Ders' genel formdan girilmemiş!`);
-                    if (!globalTopic) errors.push(`Satır ${rowNum}: 'Konu' genel formdan girilmemiş!`);
-                    if (!s_no) errors.push(`Satır ${rowNum}: 'Soru Numarası' eksik!`);
-                    if (!s_text && !img_url) errors.push(`Satır ${rowNum}: 'Soru Metni' veya Resim eksik!`);
-
-                    if (!isAcikUclu) {
-                        if (!optA || !optB || !optC || !optD) {
-                            errors.push(`Satır ${rowNum}: En az 4 şık (A, B, C, D) bulunmalıdır!`);
-                        }
-                        if (globalLevel === 'LİSE' || globalLevel.includes('Lise')) {
-                            if (!optE) errors.push(`Satır ${rowNum}: Kademe Lise olduğu için 5. şık (E) zorunludur!`);
-                        }
-                    }
-
-                    if (!correctAns) errors.push(`Satır ${rowNum}: 'Doğru Cevap' girilmemiş!`);
-
-                    parsedArray.push({
-                        Level: globalLevel,
-                        Grade: globalLevel, // Yedek/Eski sistem uyumu
-                        ClassGrade: globalClass,
-                        Lesson: globalLesson,
-                        Topic: globalTopic,
-                        Unit: globalTopic, // Yedek/Eski sistem uyumu
-                        QNumber: s_no,
-                        ImgURL: img_url,
-                        QuestionText: s_text,
-                        Clue: clue,
-                        OptionA: optA, OptionB: optB, OptionC: optC, OptionD: optD, OptionE: optE,
-                        CorrectAnswer: correctAns
-                    });
+                if (isAcikUclu) {
+                    correctAns = parts[3] ? parts[3].trim() : "";
+                    img_url = parts[4] ? parts[4].trim() : "";
+                } else {
+                    optA = parts[3] ? parts[3].trim() : "";
+                    optB = parts[4] ? parts[4].trim() : "";
+                    optC = parts[5] ? parts[5].trim() : "";
+                    optD = parts[6] ? parts[6].trim() : "";
+                    optE = parts[7] ? parts[7].trim() : "";
+                    correctAns = parts[8] ? parts[8].trim() : "";
+                    img_url = parts[9] ? parts[9].trim() : "";
                 }
+
+                if (!globalLevel) errors.push(`Satır ${rowNum}: 'Set Kademesi' genel formdan seçilmemiş!`);
+                if (!globalClass) errors.push(`Satır ${rowNum}: 'Sınıf' genel formdan seçilmemiş!`);
+                if (!globalLesson) errors.push(`Satır ${rowNum}: 'Ders' genel formdan girilmemiş!`);
+                if (!globalTopic) errors.push(`Satır ${rowNum}: 'Konu' genel formdan girilmemiş!`);
+                if (!s_no) errors.push(`Satır ${rowNum}: 'Soru Numarası' eksik!`);
+                if (!s_text && !img_url) errors.push(`Satır ${rowNum}: 'Soru Metni' veya Resim eksik!`);
+
+                if (!isAcikUclu) {
+                    if (!optA || !optB || !optC || !optD) {
+                        errors.push(`Satır ${rowNum}: En az 4 şık (A, B, C, D) bulunmalıdır!`);
+                    }
+                    if (globalLevel === 'LİSE' || globalLevel.includes('Lise')) {
+                        if (!optE) errors.push(`Satır ${rowNum}: Kademe Lise olduğu için 5. şık (E) zorunludur!`);
+                    }
+                }
+
+                if (!correctAns) errors.push(`Satır ${rowNum}: 'Doğru Cevap' girilmemiş!`);
+
+                parsedArray.push({
+                    Level: globalLevel,
+                    Grade: globalLevel,
+                    ClassGrade: globalClass,
+                    Lesson: globalLesson,
+                    Topic: globalTopic,
+                    Unit: globalTopic,
+                    QNumber: s_no,
+                    ImgURL: img_url,
+                    QuestionText: s_text,
+                    Clue: clue,
+                    OptionA: optA, OptionB: optB, OptionC: optC, OptionD: optD, OptionE: optE,
+                    CorrectAnswer: correctAns
+                });
             } else {
-                // WordsPool
                 if (parts.length >= 1) {
                     let w_word = parts[0] ? parts[0].trim() : "";
 
@@ -82,11 +77,11 @@ function parseHibritData(rawData, setType, subType = 'coktan_secmeli', globalLev
 
                     parsedArray.push({
                         Level: globalLevel,
-                        Grade: globalLevel, // Yedek
+                        Grade: globalLevel,
                         ClassGrade: globalClass,
                         Lesson: globalLesson,
                         Unit: globalTopic,
-                        Topic: globalTopic, // Dashboard Topic beklediği için ikisini de yazıyoruz
+                        Topic: globalTopic,
                         Word: w_word,
                         Clue: parts.length > 1 ? (parts[1] ? parts[1].trim() : "") : "",
                         MeaningTR: parts.length > 2 ? (parts[2] ? parts[2].trim() : "") : "",
@@ -194,7 +189,7 @@ if (isFirebaseInitialized) {
 
                 if (setNameInput) setNameInput.value = ''; // Modala geçerken arkadaki kutuyu boşaltalım
 
-                console.log("Modal çağrılıyor: openCrudModalForNewSet(", title, type, subType, isPublic, gLevel, gClass, gLesson, gTopic, ")");
+                console.log("Modal çağrılıyor: openCrudModalForNewSet: " + title);
                 // Veritabanına yazmak yerine doğrudan "Yeni Satır Ekleme" Modalı açılır
                 window.openCrudModalForNewSet(title, type, subType, isPublic, gLevel, gClass, gLesson, gTopic);
             } catch (err) {
@@ -212,6 +207,7 @@ function loadMySets() {
     if (!isFirebaseInitialized || !currentUser) return;
 
     const mySetsContainer = document.getElementById('mySetsList');
+    if (!mySetsContainer) return;
     mySetsContainer.innerHTML = '<p>Yükleniyor...</p>';
 
     // MasterPool tablosundan sadece Author_ID'si benim olanları çek
@@ -227,14 +223,38 @@ function loadMySets() {
                 return;
             }
 
-            mySetsContainer.innerHTML = ''; // Temizle
-
             const badge = document.getElementById('mySetsBadge');
             if (badge) badge.textContent = snapshot.numChildren();
+            
+            const badgeTitle = document.getElementById('mySetsBadgeInTitle');
+            if (badgeTitle) badgeTitle.textContent = `(${snapshot.numChildren()} adet)`;
 
+            mySetsContainer.innerHTML = ''; // Kesin temizle
+
+            let setsArr = [];
             snapshot.forEach((childSnapshot) => {
-                const setKey = childSnapshot.key;
-                const setVal = childSnapshot.val();
+                setsArr.push({
+                    key: childSnapshot.key,
+                    val: childSnapshot.val()
+                });
+            });
+
+            // Sıralama Mantığı
+            const sortVal = document.getElementById('mySetsSortSelect') ? document.getElementById('mySetsSortSelect').value : 'date_desc';
+            
+            if (sortVal === 'alpha_asc') {
+                setsArr.sort((a, b) => a.val.Title.localeCompare(b.val.Title, 'tr'));
+            } else if (sortVal === 'count_desc') {
+                setsArr.sort((a, b) => (b.val.ItemCount || 0) - (a.val.ItemCount || 0));
+            } else if (sortVal === 'date_asc') {
+                setsArr.sort((a, b) => (a.val.CreatedAt || 0) - (b.val.CreatedAt || 0));
+            } else { // date_desc (default)
+                setsArr.sort((a, b) => (b.val.CreatedAt || 0) - (a.val.CreatedAt || 0));
+            }
+
+            setsArr.forEach((itemObj) => {
+                const setKey = itemObj.key;
+                const setVal = itemObj.val;
 
                 const card = document.createElement('div');
                 card.className = 'set-card';
@@ -299,17 +319,12 @@ function loadGlobalSets() {
 
     poolRef.once('value')
         .then((snapshot) => {
-            if (!snapshot.exists()) {
-                globalSetsList.innerHTML = '<p style="color: #999; text-align: center; font-style: italic;">Henüz global havuza açılmış bir set bulunmuyor...</p>';
-                const badge = document.getElementById('globalSetsBadge');
-                if (badge) badge.textContent = '0';
-                return;
-            }
-
-            globalSetsList.innerHTML = ''; // Temizle
-
             const badge = document.getElementById('globalSetsBadge');
             if (badge) badge.textContent = snapshot.numChildren();
+            
+            globalSetsList.innerHTML = ''; // Kesin temizle
+            
+            globalSetsList.innerHTML = ''; // Temizle
 
             snapshot.forEach((childSnapshot) => {
                 const setKey = childSnapshot.key;
