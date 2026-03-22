@@ -779,3 +779,46 @@ body {
         letter-spacing: 2px;
     }
 }
+
+/* ==========================================================================
+   TUG OF WAR (ARQON) - OTTOMAN TUG OF WAR STYLES
+   ========================================================================== */
+.tagwar-side { position: relative; overflow: hidden; }
+
+.virtual-keypad { 
+    margin-top: 5px; 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 8px; 
+    width: 90%;
+    max-width: 260px;
+}
+
+.virtual-keypad button { 
+    background: rgba(255, 255, 255, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.2); 
+    color: white; 
+    padding: 12px; 
+    font-size: 1.4rem; 
+    font-weight: bold; 
+    border-radius: 12px; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    user-select: none; 
+    backdrop-filter: blur(5px); 
+}
+
+.virtual-keypad button:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+.virtual-keypad button:active { transform: scale(0.9); background: var(--accent-color); }
+.virtual-keypad button.key-del { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+.virtual-keypad button.key-clear { background: rgba(107, 114, 128, 0.2); color: #d1d5db; }
+
+
+.tagwar-timer-box.hurry { animation: tagPulse 0.5s infinite; background: #ef4444 !important; }
+@keyframes tagPulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); } 100% { transform: scale(1); } }
+
+@media (max-width: 900px) { 
+    .tagwar-interaction-zone { flex-direction: column; height: 60% !important; min-height: 400px; } 
+    .tagwar-side { border-right: none !important; border-bottom: 2px solid rgba(255,255,255,0.1); padding: 10px !important; } 
+    .tagWarSandbox { height: 40% !important; }
+}
