@@ -857,6 +857,128 @@ function loadGameSetup(game, configSheet) {
                 });
         }
     }
+    else if (game.id === 'avatarrun') {
+        const setupFormObj = document.getElementById('dynamicSetupForm');
+        setupFormObj.innerHTML = '<p style="color:white; text-align:center;">Avatar Run Setleri Yükleniyor...</p>';
+
+        if (typeof database !== 'undefined') {
+            database.ref('MasterPool').once('value')
+                .then(snapshot => {
+                    let rows = [];
+                    if (snapshot.exists()) {
+                        const allData = snapshot.val();
+                        Object.entries(allData).forEach(([setKey, set]) => {
+                            if (set.Type === 'trivia' || set.Type === 'wordspool' || set.Type === 'qpool') {
+                                rows.push({
+                                    id: setKey,
+                                    title: set.Title || "İsimsiz Set",
+                                    type: set.Type || "wordspool",
+                                    subType: set.SubType || "coktan_secmeli",
+                                    author: set.Author_ID,
+                                    isPublic: set.IsPublic === undefined ? true : set.IsPublic,
+                                    level: set.GlobalLevel || "Tümü",
+                                    cls: set.GlobalClass || "Tümü",
+                                    lesson: set.GlobalLesson || "Tümü"
+                                });
+                            }
+                        });
+                    }
+                    window.avatarrunRawData = rows;
+
+                    const avatarrunConfig = [
+                        { SettingName: "AvatarRunGameMode", DisplayName: "Oyun Tarzı", Type: "toggle", OptionsSource: "Takım Modu (Quizlet Live),Bireysel Mod", DefaultValue: "Takım Modu (Quizlet Live)" },
+                        { SettingName: "AvatarRunSource", DisplayName: "İçerik Kaynağı", Type: "toggle", OptionsSource: "Hazır Setler (Trivia/AvatarRun),Mevcut Soru/Kelime Havuzundan Üret", DefaultValue: "Hazır Setler (Trivia/AvatarRun)" },
+                        { SettingName: "SetPreference", DisplayName: "Set Havuzu", Type: "dropdown", OptionsSource: "GamEdu Keşfet,Benim Setlerim", DefaultValue: "GamEdu Keşfet" },
+                        { SettingName: "GlobalLevelFilter", DisplayName: "Kademe", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
+                        { SettingName: "GlobalClassFilter", DisplayName: "Sınıf", Type: "dropdown", OptionsSource: "Tümü,1. Sınıf,2. Sınıf,3. Sınıf,4. Sınıf,5. Sınıf,6. Sınıf,7. Sınıf,8. Sınıf,9. Sınıf,10. Sınıf,11. Sınıf,12. Sınıf", DefaultValue: "Tümü" },
+                        { SettingName: "GlobalLessonFilter", DisplayName: "Ders", Type: "dropdown", OptionsSource: "Tümü,Türkçe,Türk Dili ve Edebiyatı,Matematik,Hayat Bilgisi,Fen Bilimleri,Sosyal Bilgiler,Tarih,T.C. İnkılap Tarihi,Coğrafya,Fizik,Kimya,Biyoloji,Felsefe,İngilizce,Din Kültürü", DefaultValue: "Tümü" },
+                        { SettingName: "AvatarRunSetsCheckbox", DisplayName: "Seçilebilir Setler (Tek Seçim)", Type: "multiselect", OptionsSource: "Seçim Bekleniyor", DefaultValue: "" }
+                    ];
+
+                    populateSetupForm(avatarrunConfig);
+
+                    setTimeout(() => {
+                        const dynamicForm = document.getElementById('dynamicSetupForm');
+                        if (dynamicForm && !document.getElementById('openAvatarEditorBtn_main')) {
+                            const btn = document.createElement('button');
+                            btn.id = 'openAvatarEditorBtn_main';
+                            btn.className = 'login-btn fade-in';
+                            btn.style = 'margin-bottom:15px; width:100%; background:var(--glass-bg); border: 2px dashed #f43f5e; color:#fda4af; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(244, 63, 94, 0.2);';
+                            btn.innerHTML = '✨ Sıfırdan Yeni Karma Set Oluştur (Editör)';
+                            dynamicForm.prepend(btn);
+
+                            btn.onclick = (e) => {
+                                e.preventDefault();
+                                window.triviaQuestions = [];
+                                window.activeTriviaQuestionId = null;
+                                if (window.TriviaEditor) {
+                                    document.getElementById('gameTitleInput').value = '';
+                                    TriviaEditor.renderQuestionsList();
+                                    TriviaEditor.showEmptyState();
+                                }
+                                document.getElementById('triviaEditorModal').classList.add('active');
+                                if (typeof initTriviaEditor === 'function') initTriviaEditor();
+                            };
+                        }
+
+                        const pref = document.getElementById('SetPreference');
+                        const sourceToggle = document.getElementById('AvatarRunSource');
+                        const lvlEl = document.getElementById('GlobalLevelFilter');
+                        const clsEl = document.getElementById('GlobalClassFilter');
+                        const lesEl = document.getElementById('GlobalLessonFilter');
+                        const cbContainer = document.getElementById('AvatarRunSetsCheckbox');
+                        const startBtn = document.getElementById('startGameBtn');
+
+                        function updateAvatarRunDropdowns() {
+                            let filtered = window.avatarrunRawData || [];
+                            const isAutoProduce = sourceToggle && sourceToggle.value === 'Mevcut Soru/Kelime Havuzundan Üret';
+
+                            if (isAutoProduce) {
+                                filtered = filtered.filter(r => r.type === 'wordspool' || r.type === 'qpool');
+                                // if (startBtn) startBtn.innerHTML = "Otomatik Üret ve Başlat";
+                            } else {
+                                filtered = filtered.filter(r => r.type === 'trivia');
+                                // if (startBtn) startBtn.innerHTML = "Seçili Oyunu Başlat";
+                            }
+
+                            if (pref && pref.value === "Benim Setlerim") {
+                                if (typeof currentUser !== 'undefined' && currentUser) {
+                                    filtered = filtered.filter(r => r.author === currentUser.uid);
+                                } else {
+                                    filtered = [];
+                                }
+                            } else {
+                                filtered = filtered.filter(r => r.isPublic === true);
+                            }
+
+                            if (lvlEl && lvlEl.value !== "Tümü") filtered = filtered.filter(s => s.level === lvlEl.value);
+                            if (clsEl && clsEl.value !== "Tümü") filtered = filtered.filter(s => s.cls === clsEl.value);
+                            if (lesEl && lesEl.value !== "Tümü") filtered = filtered.filter(s => s.lesson === lesEl.value);
+
+                            if (cbContainer) {
+                                if (filtered.length === 0) {
+                                    cbContainer.innerHTML = '<span style="color:#ef4444; font-size:0.9rem;">Bu kategoride set bulunamadı.</span>';
+                                } else {
+                                    cbContainer.innerHTML = filtered.map(s =>
+                                        '<label style="display:flex; align-items:center; gap:8px; padding:8px; background:rgba(0,0,0,0.3); border-radius:6px; margin-bottom:5px; cursor:pointer;">' +
+                                        '<input type="radio" name="AvatarRunSetsCheckbox" value="' + s.id + '" style="cursor:pointer;" ' + (filtered.length === 1 ? "checked" : "") + '>' +
+                                        '<span style="color:#fff;">' + s.title + ' <small style="color:#94a3b8; font-size:0.75rem;">(' + s.type.toUpperCase() + ')</small></span></label>'
+                                    ).join('');
+                                }
+                            }
+                        }
+
+                        if (pref) pref.addEventListener('change', updateAvatarRunDropdowns);
+                        if (lvlEl) lvlEl.addEventListener('change', updateAvatarRunDropdowns);
+                        if (clsEl) clsEl.addEventListener('change', updateAvatarRunDropdowns);
+                        if (lesEl) lesEl.addEventListener('change', updateAvatarRunDropdowns);
+                        if (sourceToggle && sourceToggle.parentElement) sourceToggle.parentElement.addEventListener('click', () => { setTimeout(updateAvatarRunDropdowns, 50); });
+                        updateAvatarRunDropdowns();
+
+                    }, 200);
+                });
+        }
+    }
     else if (game.id === 'tagwar') {
         const tagWarConfig = [
             { SettingName: "TagGameType", DisplayName: "Oyun Türü", Type: "toggle", OptionsSource: "Matematik,Kelime Dağarcığı", DefaultValue: "Matematik" },
@@ -1900,6 +2022,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // AVATARRUN İÇİN BAŞLATMA OVERRIDE
+            if (formData.GameType === 'avatarrun') {
+                startBtn.textContent = startBtnText;
+                startBtn.disabled = false;
+
+                if (!formData.AvatarRunSetsCheckbox || formData.AvatarRunSetsCheckbox.trim() === '') {
+                    showOzelAlert("Lütfen işleme devam etmek için listeden bir set seçin.", "hata");
+                    return;
+                }
+
+                if (formData.AvatarRunSource === 'Mevcut Soru/Kelime Havuzundan Üret') {
+                    if (typeof window.generateTriviaFromWordspool === 'function') {
+                        // Aynı fonksiyon trivia/avatarrun ayrımı yapmadan seti oluşturur
+                        // Daha sonra Avatar Run motorunu başlattırabilmek için özel bir callback veya flag konabilir ama şimdilik standart akışta bırakalım
+                        window.generateTriviaFromWordspool(formData.AvatarRunSetsCheckbox, 'avatarrun'); // avatarrun flagini ekledik
+                    } else {
+                        showOzelAlert("Oto-Üretim modülü henüz yüklenmedi veya bulunamadı.", "hata");
+                    }
+                    return;
+                }
+
+                document.getElementById('setupArea').style.display = 'none';
+
+                const avatarRunGameArea = document.getElementById('avatarrunGameArea');
+                if (avatarRunGameArea) {
+                    avatarRunGameArea.style.display = 'block';
+                    avatarRunGameArea.classList.remove('hidden-spa-module');
+                }
+
+                if (typeof AvatarRunEngine !== 'undefined') {
+                    AvatarRunEngine.init(formData);
+                } else {
+                    console.error("AvatarRunEngine yüklenemedi!");
+                }
+                return;
+            }
+
             // DICTIONARY İÇİN BAŞLATMA OVERRIDE
             if (formData.GameType === 'dictionary') {
                 startBtn.textContent = startBtnText;
@@ -2045,6 +2204,12 @@ function goToLobby() {
     if (triviaGameArea) triviaGameArea.style.display = 'none'; // Added this line
     if (triviaGameArea) triviaGameArea.classList.add('hidden-spa-module'); // Added this line
 
+    const avatarrunGameArea = document.getElementById('avatarrunGameArea');
+    if (avatarrunGameArea) {
+        avatarrunGameArea.style.display = 'none';
+        avatarrunGameArea.classList.add('hidden-spa-module');
+    }
+
     const livePinJoinArea = document.getElementById('livePinJoinArea');
     if (livePinJoinArea) {
         livePinJoinArea.style.display = 'none';
@@ -2075,7 +2240,7 @@ window.openLivePinJoinArea = function() {
     // Diğer tüm alanları gizle
     const areasToHide = ['setupArea', 'gameArea', 'lingoGameArea', 'quickRevealGameArea', 
                          'baambooGameArea', 'dictionaryGameArea', 'tagWarGameArea', 
-                         'triviaGameArea', 'welcomeHero', 'gamesListArea', 'livePinStudentArea', 'livePinHostArea'];
+                         'triviaGameArea', 'avatarrunGameArea', 'welcomeHero', 'gamesListArea', 'livePinStudentArea', 'livePinHostArea'];
     areasToHide.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
