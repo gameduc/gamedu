@@ -833,7 +833,40 @@ window.attemptLiveJoin = function() {
         return;
     }
     
-    if (typeof TriviaEngine !== 'undefined') {
-        TriviaEngine.joinLiveRoom(pin, name, avatar);
+    // Firebase Routing: Pin'i önce Trivia odalarında ara, yoksa Avatar Run odalarında ara
+    if (typeof database !== 'undefined') {
+        const joinBtn = document.getElementById('liveJoinEnterBtn');
+        const origText = joinBtn ? joinBtn.textContent : "Oyuna Katıl";
+        if (joinBtn) joinBtn.textContent = 'Bağlanıyor...';
+
+        database.ref('LiveTriviaRooms/' + pin).once('value').then(snap => {
+            if (snap.exists() && snap.val().state !== 'END' && typeof TriviaEngine !== 'undefined') {
+                if (joinBtn) joinBtn.textContent = origText;
+                TriviaEngine.joinLiveRoom(pin, name, avatar);
+            } else {
+                // Eğer Trivia'da yoksa Avatar Run için kontrol et
+                database.ref('LiveAvatarRunRooms/' + pin).once('value').then(avSnap => {
+                    if (joinBtn) joinBtn.textContent = origText;
+                    if (avSnap.exists() && avSnap.val().state !== 'END' && typeof AvatarRunEngine !== 'undefined') {
+                        AvatarRunEngine.joinLiveRoom(pin, name, avatar);
+                    } else {
+                        if(typeof showOzelAlert === 'function') {
+                            showOzelAlert("Geçersiz PIN Kodu. Oda bulunamadı veya kapanmış olabilir.", "hata");
+                        }
+                    }
+                }).catch(() => {
+                    if (joinBtn) joinBtn.textContent = origText;
+                    showOzelAlert("PIN Kontrol Hatası (AvatarRun).", "hata");
+                });
+            }
+        }).catch(() => {
+            if (joinBtn) joinBtn.textContent = origText;
+            showOzelAlert("PIN Kontrol Hatası (Trivia).", "hata");
+        });
+    } else {
+        // Fallback for offline mode or syntax issues
+        if (typeof TriviaEngine !== 'undefined') {
+            TriviaEngine.joinLiveRoom(pin, name, avatar);
+        }
     }
 };
