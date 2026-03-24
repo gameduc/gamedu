@@ -51,6 +51,7 @@
                     A.Aytekin</small></span>
         </a>
         <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="navStudentJoinBtn" class="login-btn" style="background:#10b981;" onclick="openLivePinJoinArea()">🎯 PIN ile Katıl</button>
             <button id="navTeacherBtn" class="login-btn"
                 onclick="window.handleNavTeacherBtn && window.handleNavTeacherBtn()">Öğretmen Girişi</button>
             <button onclick="document.querySelector('.navbar').style.display='none'"
@@ -1345,6 +1346,155 @@
         </div>
     </section>
 
+    <!-- GamEdu Trivia Oyun Ekran Modülü (Faz 2) -->
+    <section id="triviaGameArea" class="hidden-spa-module" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <!-- Üst Bar: PIN, Oyuncu Sayısı, Başlık -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 15px; background: rgba(15, 23, 42, 0.8); padding: 15px 25px; border-radius: 16px; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <h1 id="triviaGameTitle" style="font-size: 2rem; margin: 0; color: #fff; text-shadow: 0 2px 10px rgba(255,255,255,0.2);">GamEdu Trivia</h1>
+                <span id="triviaModeBadge" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa; padding: 5px 12px; border-radius: 8px; font-weight: bold; font-size: 0.9rem; border: 1px solid rgba(139, 92, 246, 0.3);">Mod: Bekleniyor</span>
+            </div>
+            
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div id="triviaPinDisplay" style="display: none; flex-direction: column; align-items: center; background: rgba(16, 185, 129, 0.1); padding: 5px 20px; border-radius: 12px; border: 2px dashed #10b981;">
+                    <span style="font-size: 0.8rem; color: #a7f3d0; text-transform: uppercase; font-weight: bold; letter-spacing: 2px;">Katılım PIN Kodu</span>
+                    <strong id="triviaPinCode" style="font-size: 2.5rem; color: #10b981; font-weight: 900; letter-spacing: 5px;">000000</strong>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 10px 20px; border-radius: 12px;">
+                    <span style="font-size: 0.8rem; color: #cbd5e1;">Skorlar / Oyuncular</span>
+                    <strong id="triviaPlayerStatus" style="font-size: 1.5rem; color: #fff;">0</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Merkez Oyun Alanı (Soru ve Etkileşim) -->
+        <div class="game-content-card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; text-align: center; backdrop-filter: blur(10px); box-shadow: inset 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 2rem; min-height: 400px; display: flex; flex-direction: column; position: relative;">
+            
+            <!-- Soru Metni ve Görseli -->
+            <div id="triviaQuestionHeader" style="margin-bottom: 2rem;">
+                <h2 id="triviaQuestionText" style="font-size: 3rem; color: #f8fafc; font-weight: 800; margin: 0 0 1rem 0; line-height: 1.3; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Hazırlanıyor...</h2>
+                <div id="triviaImageContainer" style="display: none; width: 100%; max-width: 600px; height: 300px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                    <img id="triviaQuestionImage" src="" alt="Soru Görseli" style="width: 100%; height: 100%; object-fit: contain; background: #000;">
+                    <!-- Pin Zone (Görsel İşaretleme modunda kullanılacak) -->
+                    <div id="triviaPinOverlay" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; cursor:crosshair;"></div>
+                </div>
+            </div>
+
+            <!-- İnteraktif Cevap Alanı (Şıklar, Slider, Input vb. buraya basılacak) -->
+            <div id="triviaInteractionZone" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%;">
+                <div class="loader" style="margin: 0 auto;"></div>
+            </div>
+
+            <!-- Geri Sayım Çubuğu -->
+            <div id="triviaTimerBarContainer" style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-top: 2rem; overflow: hidden;">
+                <div id="triviaTimerBar" style="height: 100%; width: 100%; background: #3b82f6; transition: width 1s linear, background-color 0.3s;"></div>
+            </div>
+        </div>
+
+        <!-- Yönetim Kontrolleri -->
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button id="triviaHostNextBtn" class="login-btn" style="background: #8b5cf6; padding: 10px 25px; font-size: 1rem; min-width: 150px; display: none;">Sıradaki Soru</button>
+            <button id="triviaHostShowResultsBtn" class="login-btn" style="background: #10b981; padding: 10px 25px; font-size: 1rem; min-width: 150px; display: none;">Sonuçları Göster</button>
+            <button onclick="document.getElementById('triviaGameArea').style.display='none'; document.getElementById('setupArea').style.display='block';" class="login-btn" style="background: transparent; border: 1px solid var(--glass-border); padding: 10px 25px; font-size: 1rem;">⚙️ Ayarlara Dön</button>
+        </div>
+    </section>
+
+    <!-- GamEdu Avatar Run Oyun Ekran Modülü (Faz 7) -->
+    <section id="avatarrunGameArea" class="hidden-spa-module" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        <!-- Üst Bar: PIN, Oyuncu Sayısı, Başlık -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 15px; background: rgba(15, 23, 42, 0.8); padding: 15px 25px; border-radius: 16px; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <h1 id="avatarrunGameTitle" style="font-size: 2rem; margin: 0; color: #fff; text-shadow: 0 2px 10px rgba(255,255,255,0.2);">Avatar Run</h1>
+                <span id="avatarrunModeBadge" style="background: rgba(244, 63, 94, 0.2); color: #fda4af; padding: 5px 12px; border-radius: 8px; font-weight: bold; font-size: 0.9rem; border: 1px solid rgba(244, 63, 94, 0.3);">Mod: Bekleniyor</span>
+            </div>
+            
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div id="avatarrunPinDisplay" style="display: none; flex-direction: column; align-items: center; background: rgba(16, 185, 129, 0.1); padding: 5px 20px; border-radius: 12px; border: 2px dashed #10b981;">
+                    <span style="font-size: 0.8rem; color: #a7f3d0; text-transform: uppercase; font-weight: bold; letter-spacing: 2px;">Katılım PIN Kodu</span>
+                    <strong id="avatarrunPinCode" style="font-size: 2.5rem; color: #10b981; font-weight: 900; letter-spacing: 5px;">000000</strong>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 10px 20px; border-radius: 12px;">
+                    <span style="font-size: 0.8rem; color: #cbd5e1;">Skorlar / Aksiyonlar</span>
+                    <strong id="avatarrunPlayerStatus" style="font-size: 1.5rem; color: #fff;">0</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Merkez Oyun Alanı (Avatarların Koşu Pisti) -->
+        <div class="game-content-card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; text-align: center; backdrop-filter: blur(10px); box-shadow: inset 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 2rem; min-height: 400px; display: flex; flex-direction: column; position: relative;">
+            
+            <div id="avatarrunTrackContainer" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: stretch; width: 100%; gap: 15px; overflow-y: auto; max-height: 60vh;">
+                <!-- JavaScript tarafında yarış pistleri / takım çubukları buraya enjekte edilecek -->
+                <div class="loader" style="margin: auto;"></div>
+            </div>
+        </div>
+
+        <!-- Yönetim Kontrolleri -->
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; align-items: center;">
+            <div id="avatarrunLobbyControlArea" style="display:none; width:100%; justify-content:center; margin-bottom: 10px;">
+                 <button id="avatarrunStartRaceBtn" class="login-btn fade-in" style="background: linear-gradient(135deg, #10b981, #059669); padding: 15px 40px; font-size: 1.5rem; font-weight: 900; border-radius: 12px; border:none; color:#fff; cursor:pointer; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);">🏁 OYUNU BAŞLAT</button>
+            </div>
+            <button id="avatarrunHostNextBtn" class="login-btn" style="background: #f43f5e; padding: 10px 25px; font-size: 1rem; min-width: 150px; display: none;">Dağıt / İlerlet</button>
+            <button onclick="document.getElementById('avatarrunGameArea').style.display='none'; document.getElementById('setupArea').style.display='block';" class="login-btn" style="background: transparent; border: 1px solid var(--glass-border); padding: 10px 25px; font-size: 1rem;">⚙️ Ayarlara Dön</button>
+        </div>
+    </section>
+
+    <!-- CANLI (LIVE PIN) KATILIM EKRANI - ÖĞRENCİLER İÇİN -->
+    <section id="livePinJoinArea" class="hidden-spa-module" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+        <div class="glass-panel" style="max-width: 600px; width: 95%; padding: 40px 30px; text-align: center; border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 20px;">
+            <h1 style="font-size: 2.5rem; color: #fff; margin: 0; text-shadow: 0 4px 15px rgba(139, 92, 246, 0.5); font-weight: 900;">GAM<span style="color:#8b5cf6">EDU</span> JOIN</h1>
+            <p style="color: #cbd5e1; font-size: 1.1rem; margin-top: -10px;">Öğretmeninizin tahtadaki PIN kodunu girin.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">
+                <input type="number" id="liveJoinPin" placeholder="Oyun PIN Kodu" style="text-align: center; font-size: 2rem; padding: 15px; border-radius: 12px; border: 2px solid var(--glass-border); background: rgba(0,0,0,0.3); color: #fff; font-weight: bold; letter-spacing: 5px; outline: none; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);">
+                <input type="text" id="liveJoinNickname" placeholder="Kullanıcı Adı (Nickname)" maxlength="15" autocomplete="off" style="text-align: center; font-size: 1.3rem; padding: 15px; border-radius: 12px; border: 2px solid var(--glass-border); background: rgba(0,0,0,0.3); color: #fff; outline: none;">
+            </div>
+
+            <!-- Avatar Seçimi -->
+            <div style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1);">
+                <h3 style="color: #a78bfa; margin: 0 0 15px 0; font-size: 1rem;">Avatarını Seç!</h3>
+                <!-- script ile dinamik doldurulacak ızgara -->
+                <div id="liveJoinAvatarGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; max-height: 200px; overflow-y: auto; padding-right: 5px;"></div>
+                <input type="hidden" id="liveJoinSelectedAvatar" value="">
+            </div>
+
+            <button id="liveJoinEnterBtn" class="login-btn" style="background: #10b981; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 12px; margin-top: 10px; box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); border:none; color:#fff; cursor:pointer;" onclick="attemptLiveJoin()">Oyuna Katıl</button>
+            <button onclick="goToLobby()" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #cbd5e1; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s;">Geri Dön / İptal</button>
+        </div>
+    </section>
+
+    <!-- CANLI (LIVE PIN) OYNANIŞ EKRANI - ÖĞRENCİLER İÇİN (SADECE BUTONLAR) -->
+    <section id="livePinStudentArea" class="hidden-spa-module" style="display: flex; flex-direction: column; height: 100vh; background: #0f172a;">
+        <!-- JS ile Soru sırasında Dev Tuşlar (Üçgen/Kare vs) basılacak -->
+        <div id="livePinStudentWaitArea" style="flex: 1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding: 20px;">
+            <p style="color:#fff; font-size: 2rem; font-weight: bold;">Artık Oyundasın!</p>
+            <p style="color:#94a3b8; font-size: 1.2rem;">Lütfen tahtaya bak.</p>
+            <div class="loader" style="margin-top:20px;"></div>
+        </div>
+        <div id="livePinStudentInteractionZone" style="display:none; flex:1; width:100%; height:100%;"></div>
+    </section>
+
+    <!-- CANLI (LIVE PIN) LOBİ EKRANI - ÖĞRETMEN (HOST) İÇİN -->
+    <section id="livePinHostArea" class="hidden-spa-module" style="display: flex; flex-direction: column; height: 100vh; background: #0f172a; padding: 30px; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 20px 40px; border-radius: 20px; border: 2px solid var(--glass-border); margin-bottom: 20px;">
+            <div>
+                <p style="color: #cbd5e1; font-size: 1.2rem; margin: 0;">Oyuna Katılmak İçin PIN Kodunu Girin!</p>
+                <h1 style="color: #fff; font-size: 4rem; letter-spacing: 15px; margin: 5px 0 0 0; text-shadow: 0 5px 15px rgba(139, 92, 246, 0.6);" id="hostPinDisplay">---</h1>
+            </div>
+            <div style="text-align: center;">
+                <p style="color: #cbd5e1; font-size: 1.2rem; margin: 0;">Bağlanan Oyuncular</p>
+                <div style="font-size: 3rem; font-weight: bold; color: #10b981;" id="hostPlayerCount">0</div>
+            </div>
+            <button id="hostStartGameBtn" class="login-btn" style="background: #eab308; color: #000; padding: 20px 40px; font-size: 1.5rem; font-weight: bold; border-radius: 12px; box-shadow: 0 5px 20px rgba(234, 179, 8, 0.4); border:none; cursor:pointer;" onclick="TriviaEngine.startLiveQuestionLoop()">Oyunu Başlat 🚀</button>
+        </div>
+        
+        <div style="flex: 1; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1); padding: 20px; overflow-y: auto;">
+            <div id="hostPlayerList" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
+                <!-- JS ile oyuncu kartları (Avatar + İsim) eklenecek -->
+            </div>
+        </div>
+    </section>
+
     <!-- CRUD DÜZENLEME MODALI -->
     <div id="crudModal" class="ozel-alert-overlay">
         <div class="ozel-alert-box"
@@ -1481,6 +1631,85 @@
         </div>
     </div>
 
+    <!-- TRIVIA EDITOR MODALI -->
+    <div id="triviaEditorModal" class="ozel-alert-overlay" style="z-index: 10005;">
+        <div class="ozel-alert-box" style="max-width: 1200px; width: 95%; height: 90vh; padding: 0; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--glass-border); display: flex; flex-direction: column; overflow: hidden;">
+            
+            <!-- Üst Başlık -->
+            <div style="background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; color: #a78bfa; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    📝 GamEdu Trivia Hazırlık
+                    <input type="text" id="triviaSetNameInput" placeholder="Set Adı (Örn: 6. Sınıf Tekrar)" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(167, 139, 250, 0.5); color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 1rem; margin-left: 15px; width: 300px;">
+                </h2>
+                <div style="display: flex; gap: 10px;">
+                    <button id="triviaSaveSetBtn" class="login-btn" style="background: #10b981; padding: 8px 15px; font-size: 1rem;">💾 Seti Kaydet</button>
+                    <button onclick="document.getElementById('triviaEditorModal').classList.remove('active')" style="background: transparent; border: none; font-size: 24px; cursor: pointer; color: #cbd5e1; padding: 0;">&times;</button>
+                </div>
+            </div>
+
+            <!-- İçerik Alanı (İkiye Bölünmüş) -->
+            <div style="display: flex; flex: 1; overflow: hidden;">
+                
+                <!-- Sol Menü: Sorular Listesi -->
+                <div style="width: 250px; background: rgba(0,0,0,0.4); border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column;">
+                    <div style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                        <button id="triviaAddNewQuestionBtn" class="action-btn" style="background: #3b82f6; width: 100%; padding: 10px; font-size: 1rem;">➕ Yeni Soru Ekle</button>
+                    </div>
+                    <div id="triviaQuestionsList" style="flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 5px;">
+                        <!-- JS ile Soru Kartları Gelecek -->
+                    </div>
+                </div>
+
+                <!-- Sağ Menü: Soru Düzenleyici -->
+                <div id="triviaQuestionEditorArea" style="flex: 1; padding: 20px; overflow-y: auto; display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <label style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px; display: block;">Soru Türü Seçimi</label>
+                            <select id="triviaQTypeSelect" style="width: 100%; padding: 10px; background: rgba(15,23,42,0.8); color: #fff; border: 1px solid var(--glass-border); border-radius: 5px; font-size: 1.1rem; margin-bottom: 15px;">
+                                <option value="mcq">Çoktan Seçmeli (4 Şık)</option>
+                                <option value="tf">Doğru / Yanlış</option>
+                                <option value="type">Metin Yazma (Type)</option>
+                                <option value="match">Eşleştirme (Sürükle-Bırak)</option>
+                                <option value="sort">Sıralama (Sürükle-Bırak)</option>
+                                <option value="slider">Sayı Doğrusu (Slider)</option>
+                                <option value="pin">Görsel İşaretleme (Pin)</option>
+                            </select>
+
+                            <label style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px; display: block;">Soru Metni</label>
+                            <textarea id="triviaQTextInput" rows="3" placeholder="Sorunuzu buraya yazın..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid var(--glass-border); border-radius: 5px; font-size: 1.1rem; box-sizing: border-box; resize: none;"></textarea>
+                            <div style="margin-top: 10px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="checkbox" id="triviaQDoublePoints" style="width: 18px; height: 18px; accent-color: #f59e0b; cursor: pointer;">
+                                    <label for="triviaQDoublePoints" style="color: #f59e0b; font-size: 0.95rem; font-weight: bold; cursor: pointer;">⭐ 2x Puan</label>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label for="triviaQTimeInput" style="color: #cbd5e1; font-size: 0.9rem;">Süre (sn):</label>
+                                    <input type="number" id="triviaQTimeInput" value="30" min="5" max="300" style="width: 70px; padding: 5px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid #475569; border-radius: 4px; text-align: center;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="width: 250px; flex-shrink: 0; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px dashed var(--glass-border); text-align: center;">
+                            <label style="color: #cbd5e1; font-size: 0.85rem; display: block; margin-bottom: 8px;">Görsel Ekle (URL) - Opsiyonel</label>
+                            <input type="text" id="triviaQImageInput" placeholder="https://..." style="width: 100%; padding: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid #475569; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box; margin-bottom: 10px;">
+                            <div id="triviaQImagePreview" style="width: 100%; height: 120px; background: #000; border-radius: 4px; background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
+                            <button id="triviaEditPinAreaBtn" class="action-btn" style="display: none; background: #eab308; color: #000; width: 100%; margin-top: 10px; padding: 8px; font-weight: bold;">🎯 Hedef Bölge Seç</button>
+                        </div>
+                    </div>
+
+                    <!-- Dinamik Şıklar/Cevaplar Alanı -->
+                    <div id="triviaDynamicFieldsArea" style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                        <p style="text-align: center; color: #64748b;">Lütfen bir soru türü seçin.</p>
+                    </div>
+                </div>
+                
+                <div id="triviaNoQuestionSelected" style="flex: 1; display: flex; justify-content: center; align-items: center; color: #475569; font-size: 1.5rem; font-weight: bold;">
+                    Sol menüden soru seçin veya ekleyin.
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- PROFİL VE AYARLAR MODALI -->
     <div id="profileModal" class="ozel-alert-overlay" style="z-index:10006;">
         <div class="ozel-alert-box" style="max-width:400px; padding:25px;">
@@ -1536,6 +1765,9 @@
     <script src="./js/baamboo.js"></script>
     <script src="./js/dictionary.js"></script>
     <script src="./js/tagwar.js"></script>
+    <script src="./js/app-trivia-editor.js?v=2"></script>
+    <script src="./js/trivia.js?v=2"></script>
+    <script src="./js/avatarrun.js?v=2"></script>
 </body>
 
 </html>
