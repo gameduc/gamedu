@@ -2,7 +2,6 @@
  * TAG WAR ENGINE
  * Akıllı Tahta Düellosu - Bölünmüş Ekran Halat Çekme
  */
-
 const TagWarEngine = {
     state: {
         mode: 'accumulation', // accumulation | speed
@@ -138,6 +137,12 @@ const TagWarEngine = {
                 if (key === '⌫') btn.className = 'key-del';
                 if (key === 'C') btn.className = 'key-clear';
                 
+                // Smartboard long-press context menu fix
+                btn.style.userSelect = 'none';
+                btn.style.webkitUserSelect = 'none';
+                btn.style.webkitTouchCallout = 'none';
+                btn.oncontextmenu = (e) => { e.preventDefault(); return false; };
+                
                 btn.onclick = () => this.handleKeypress(side, key);
                 container.appendChild(btn);
             });
@@ -161,11 +166,12 @@ const TagWarEngine = {
                     const btn = document.createElement('button');
                     if (key === 'Space') btn.textContent = 'Boşluk';
                     else if (key === 'ENTER') btn.innerHTML = '✔️';
+                    else if (key === 'i') btn.textContent = 'İ';
                     else btn.textContent = key.toUpperCase();
 
-                    btn.style.flex = (key === 'Space' || key === 'ENTER') ? '2' : '1';
-                    btn.style.padding = '8px 0';
-                    btn.style.fontSize = '1.1rem';
+                    btn.style.flex = (key === 'Space' || key === 'ENTER') ? '2 1 0px' : '1 1 0px';
+                    btn.style.height = '60px'; // Smart Board için ideal dokunma yüksekliği
+                    btn.style.fontSize = '1.5rem';
                     btn.style.fontWeight = 'bold';
                     btn.style.borderRadius = '5px';
                     btn.style.border = '1px solid rgba(255,255,255,0.2)';
@@ -177,6 +183,12 @@ const TagWarEngine = {
                     if (key === '⌫') btn.style.background = '#f59e0b';
                     if (key === 'C') btn.style.background = '#ef4444';
                     if (key === 'ENTER') btn.style.background = '#10b981';
+                    
+                    // Smartboard long-press context menu fix
+                    btn.style.userSelect = 'none';
+                    btn.style.webkitUserSelect = 'none';
+                    btn.style.webkitTouchCallout = 'none';
+                    btn.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
                     btn.onmousedown = () => btn.style.transform = 'scale(0.95)';
                     btn.onmouseup = () => btn.style.transform = 'scale(1)';
