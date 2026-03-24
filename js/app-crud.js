@@ -149,6 +149,16 @@ window.openCrudModal = function (setId, isReadOnly = false) {
 
         currentSetData = snapshot.val();
 
+        // 🚨 TRIVIA SET YÖNLENDİRMESİ (Yeni Eklenti) 🚨
+        if (currentSetData.Type === 'trivia' || currentSetData.Type === 'TriviaSets') {
+            if (typeof openTriviaEditorForSet === 'function') {
+                openTriviaEditorForSet(setId, currentSetData);
+            } else {
+                showOzelAlert("Trivia Editör Modülü Yüklenemedi.", "hata");
+            }
+            return; // Normal CRUD tablosunu açma!
+        }
+
         // Modal Başlığı
         if (crudModalTitle) {
             if (isReadOnly) {
