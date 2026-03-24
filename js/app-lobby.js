@@ -173,6 +173,18 @@ function showError(error, statusContainer) {
     console.error("Hata:", error);
 }
 
+function openGameSetup(game) {
+    window.currentGameObj = game;
+    currentLoadedGame = game; // Bütün oyunların GameType referansını doğrulayan yama.
+
+    document.getElementById('gamesListArea').style.display = 'none';
+    const setupArea = document.getElementById('setupArea');
+    setupArea.style.display = 'block';
+    setupArea.classList.remove('hidden-spa-module');
+
+    document.getElementById('setupGameTitle').textContent = game.name || game.GameName || 'Oyun Kurulumu';
+}
+
 function launchGame(game, configSheet, redirectUrl) {
     const gameId = String(game.id || game.GameName || '').toLowerCase();
 
@@ -715,6 +727,134 @@ function loadGameSetup(game, configSheet) {
                     updateVisibility();
                 }
             }, 100);
+        }
+    }
+    else if (game.id === 'trivia') {
+        const setupFormObj = document.getElementById('dynamicSetupForm');
+        setupFormObj.innerHTML = '<p style="color:white; text-align:center;">Trivia Setleri Yükleniyor...</p>';
+
+        if (typeof database !== 'undefined') {
+            database.ref('MasterPool').once('value')
+                .then(snapshot => {
+                    let rows = [];
+                    if (snapshot.exists()) {
+                        const allData = snapshot.val();
+                        Object.entries(allData).forEach(([setKey, set]) => {
+                            if (set.Type === 'trivia' || set.Type === 'wordspool' || set.Type === 'qpool') {
+                                rows.push({
+                                    id: setKey,
+                                    title: set.Title || "İsimsiz Set",
+                                    type: set.Type || "wordspool",
+                                    subType: set.SubType || "coktan_secmeli",
+                                    author: set.Author_ID,
+                                    isPublic: set.IsPublic === undefined ? true : set.IsPublic,
+                                    level: set.GlobalLevel || "Tümü",
+                                    cls: set.GlobalClass || "Tümü",
+                                    lesson: set.GlobalLesson || "Tümü"
+                                });
+                            }
+                        });
+                    }
+                    window.triviaRawData = rows;
+
+                    const triviaConfig = [
+                        { SettingName: "TriviaGameMode", DisplayName: "Oyun Modu", Type: "toggle", OptionsSource: "PIN ile Canlı Oyun,Akıllı Tahta Düellosu", DefaultValue: "PIN ile Canlı Oyun" },
+                        { SettingName: "TriviaSource", DisplayName: "İçerik Kaynağı", Type: "toggle", OptionsSource: "Hazır Trivia Setleri,Mevcut Soru/Kelime Havuzundan Üret", DefaultValue: "Hazır Trivia Setleri" },
+                        { SettingName: "SetPreference", DisplayName: "Set Havuzu", Type: "dropdown", OptionsSource: "GamEdu Keşfet,Benim Setlerim", DefaultValue: "GamEdu Keşfet" },
+                        { SettingName: "GlobalLevelFilter", DisplayName: "Kademe", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
+                        { SettingName: "GlobalClassFilter", DisplayName: "Sınıf", Type: "dropdown", OptionsSource: "Tümü,1. Sınıf,2. Sınıf,3. Sınıf,4. Sınıf,5. Sınıf,6. Sınıf,7. Sınıf,8. Sınıf,9. Sınıf,10. Sınıf,11. Sınıf,12. Sınıf", DefaultValue: "Tümü" },
+                        { SettingName: "GlobalLessonFilter", DisplayName: "Ders", Type: "dropdown", OptionsSource: "Tümü,Türkçe,Türk Dili ve Edebiyatı,Matematik,Hayat Bilgisi,Fen Bilimleri,Sosyal Bilgiler,Tarih,T.C. İnkılap Tarihi,Coğrafya,Fizik,Kimya,Biyoloji,Felsefe,İngilizce,Din Kültürü", DefaultValue: "Tümü" },
+                        { SettingName: "TriviaSetsCheckbox", DisplayName: "Seçilebilir Setler (Tek Seçim)", Type: "multiselect", OptionsSource: "Seçim Bekleniyor", DefaultValue: "" }
+                    ];
+
+                    populateSetupForm(triviaConfig);
+
+                    setTimeout(() => {
+                        const dynamicForm = document.getElementById('dynamicSetupForm');
+                        if (dynamicForm && !document.getElementById('openTriviaEditorBtn_main')) {
+                            const btn = document.createElement('button');
+                            btn.id = 'openTriviaEditorBtn_main';
+                            btn.className = 'login-btn fade-in';
+                            btn.style = 'margin-bottom:15px; width:100%; background:var(--glass-bg); border: 2px dashed #8b5cf6; color:#a78bfa; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(139, 92, 246, 0.2);';
+                            btn.innerHTML = '✨ Sıfırdan Yeni Karma Trivia Seti Oluştur (Editör)';
+                            dynamicForm.prepend(btn);
+
+                            btn.onclick = (e) => {
+                                e.preventDefault();
+                                // Önceki setten kalan verileri SIFIRLA
+                                window.triviaQuestions = [];
+                                window.activeTriviaQuestionId = null;
+                                if (window.TriviaEditor) {
+                                    document.getElementById('gameTitleInput').value = '';
+                                    TriviaEditor.renderQuestionsList();
+                                    TriviaEditor.showEmptyState();
+                                }
+                                document.getElementById('triviaEditorModal').classList.add('active');
+                                if (typeof initTriviaEditor === 'function') initTriviaEditor();
+                            };
+                        }
+
+                        // Checkbox filtreleme
+                        const pref = document.getElementById('SetPreference');
+                        const sourceToggle = document.getElementById('TriviaSource');
+                        const lvlEl = document.getElementById('GlobalLevelFilter');
+                        const clsEl = document.getElementById('GlobalClassFilter');
+                        const lesEl = document.getElementById('GlobalLessonFilter');
+                        const cbContainer = document.getElementById('TriviaSetsCheckbox');
+                        const startBtn = document.getElementById('startGameBtn');
+
+                        function updateTriviaDropdowns() {
+                            let filtered = window.triviaRawData || [];
+                            const isAutoProduce = sourceToggle && sourceToggle.value === 'Mevcut Soru/Kelime Havuzundan Üret';
+
+                            // 1. Tip Filtresi
+                            if (isAutoProduce) {
+                                filtered = filtered.filter(r => r.type === 'wordspool' || r.type === 'qpool');
+                                if (startBtn) startBtn.innerHTML = "Otomatik Üret ve Başlat";
+                            } else {
+                                filtered = filtered.filter(r => r.type === 'trivia');
+                                if (startBtn) startBtn.innerHTML = "Seçili Trivia Oyununu Başlat";
+                            }
+
+                            // 2. Sahip Filtresi
+                            if (pref && pref.value === "Benim Setlerim") {
+                                if (typeof currentUser !== 'undefined' && currentUser) {
+                                    filtered = filtered.filter(r => r.author === currentUser.uid);
+                                } else {
+                                    filtered = [];
+                                }
+                            } else {
+                                filtered = filtered.filter(r => r.isPublic === true);
+                            }
+
+                            // 3. DD Filtreleri (Kademe, Sınıf, Ders)
+                            if (lvlEl && lvlEl.value !== "Tümü") filtered = filtered.filter(s => s.level === lvlEl.value);
+                            if (clsEl && clsEl.value !== "Tümü") filtered = filtered.filter(s => s.cls === clsEl.value);
+                            if (lesEl && lesEl.value !== "Tümü") filtered = filtered.filter(s => s.lesson === lesEl.value);
+
+                            if (cbContainer) {
+                                if (filtered.length === 0) {
+                                    cbContainer.innerHTML = '<span style="color:#ef4444; font-size:0.9rem;">Bu kategoride set bulunamadı.</span>';
+                                } else {
+                                    // Sadece Tek Bir Radio button oluştur (Tek Seçim)
+                                    cbContainer.innerHTML = filtered.map(s =>
+                                        '<label style="display:flex; align-items:center; gap:8px; padding:8px; background:rgba(0,0,0,0.3); border-radius:6px; margin-bottom:5px; cursor:pointer;">' +
+                                        '<input type="radio" name="TriviaSetsCheckbox" value="' + s.id + '" style="cursor:pointer;" ' + (filtered.length === 1 ? "checked" : "") + '>' +
+                                        '<span style="color:#fff;">' + s.title + ' <small style="color:#94a3b8; font-size:0.75rem;">(' + s.type.toUpperCase() + ')</small></span></label>'
+                                    ).join('');
+                                }
+                            }
+                        }
+
+                        if (pref) pref.addEventListener('change', updateTriviaDropdowns);
+                        if (lvlEl) lvlEl.addEventListener('change', updateTriviaDropdowns);
+                        if (clsEl) clsEl.addEventListener('change', updateTriviaDropdowns);
+                        if (lesEl) lesEl.addEventListener('change', updateTriviaDropdowns);
+                        if (sourceToggle && sourceToggle.parentElement) sourceToggle.parentElement.addEventListener('click', () => { setTimeout(updateTriviaDropdowns, 50); });
+                        updateTriviaDropdowns();
+
+                    }, 200);
+                });
         }
     }
     else if (game.id === 'tagwar') {
@@ -1727,6 +1867,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 return; // Normal oyun kurma rutinine istek atmayı iptal et
             }
 
+            // TRIVIA İÇİN BAŞLATMA OVERRIDE
+            if (formData.GameType === 'trivia') {
+                startBtn.textContent = startBtnText;
+                startBtn.disabled = false;
+
+                if (!formData.TriviaSetsCheckbox || formData.TriviaSetsCheckbox.trim() === '') {
+                    showOzelAlert("Lütfen işleme devam etmek için listeden bir set seçin.", "hata");
+                    return;
+                }
+
+                if (formData.TriviaSource === 'Mevcut Soru/Kelime Havuzundan Üret') {
+                    if (typeof window.generateTriviaFromWordspool === 'function') {
+                        window.generateTriviaFromWordspool(formData.TriviaSetsCheckbox);
+                    } else {
+                        showOzelAlert("Oto-Üretim modülü henüz yüklenmedi veya bulunamadı.", "hata");
+                    }
+                    return;
+                }
+
+                document.getElementById('setupArea').style.display = 'none';
+
+                const triviaGameArea = document.getElementById('triviaGameArea');
+                triviaGameArea.style.display = 'block';
+                triviaGameArea.classList.remove('hidden-spa-module');
+
+                if (typeof TriviaEngine !== 'undefined') {
+                    TriviaEngine.init(formData);
+                } else {
+                    console.error("TriviaEngine yüklenemedi!");
+                }
+                return;
+            }
+
             // DICTIONARY İÇİN BAŞLATMA OVERRIDE
             if (formData.GameType === 'dictionary') {
                 startBtn.textContent = startBtnText;
@@ -1868,11 +2041,82 @@ function goToLobby() {
         tagWarGameArea.classList.add('hidden-spa-module');
     }
 
+    const triviaGameArea = document.getElementById('triviaGameArea');
+    if (triviaGameArea) triviaGameArea.style.display = 'none'; // Added this line
+    if (triviaGameArea) triviaGameArea.classList.add('hidden-spa-module'); // Added this line
+
+    const livePinJoinArea = document.getElementById('livePinJoinArea');
+    if (livePinJoinArea) {
+        livePinJoinArea.style.display = 'none';
+        livePinJoinArea.classList.add('hidden-spa-module');
+    }
+
+    const livePinStudentArea = document.getElementById('livePinStudentArea');
+    if (livePinStudentArea) {
+        livePinStudentArea.style.display = 'none';
+        livePinStudentArea.classList.add('hidden-spa-module');
+    }
+
+    const livePinHostArea = document.getElementById('livePinHostArea');
+    if (livePinHostArea) {
+        livePinHostArea.style.display = 'none';
+        livePinHostArea.classList.add('hidden-spa-module');
+    }
+
     const welcomeHero = document.getElementById('welcomeHero');
     if (welcomeHero) welcomeHero.style.display = 'block';
 
     const gamesListArea = document.getElementById('gamesListArea');
     if (gamesListArea) gamesListArea.style.display = 'block';
+}
+
+// Öğrenci PIN ile Katılım Ekranını Açar ve Avatarları Yükler
+window.openLivePinJoinArea = function() {
+    // Diğer tüm alanları gizle
+    const areasToHide = ['setupArea', 'gameArea', 'lingoGameArea', 'quickRevealGameArea', 
+                         'baambooGameArea', 'dictionaryGameArea', 'tagWarGameArea', 
+                         'triviaGameArea', 'welcomeHero', 'gamesListArea', 'livePinStudentArea', 'livePinHostArea'];
+    areasToHide.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = 'none';
+            el.classList.add('hidden-spa-module');
+        }
+    });
+
+    // Join alanını göster
+    const joinArea = document.getElementById('livePinJoinArea');
+    if (joinArea) {
+        joinArea.style.display = 'flex';
+        joinArea.classList.remove('hidden-spa-module');
+    }
+
+    // Avatarları oluştur (1'den 100'e kadar)
+    const grid = document.getElementById('liveJoinAvatarGrid');
+    if (grid && grid.innerHTML === '') {
+        for (let i = 1; i <= 100; i++) {
+            const img = document.createElement('img');
+            img.src = `game pics/avatars/${i}.png`;
+            img.style = "width: 100%; aspect-ratio: 1; object-fit: contain; cursor: pointer; border-radius: 50%; opacity: 0.7; transition: 0.2s; border: 3px solid transparent;";
+            img.onerror = function() { this.style.display = 'none'; }; // Resim yoksa gizle
+            
+            img.onclick = function() {
+                // Öncekilerin seçimini kaldır
+                const allAvatars = grid.querySelectorAll('img');
+                allAvatars.forEach(a => {
+                    a.style.opacity = '0.7';
+                    a.style.borderColor = 'transparent';
+                    a.style.transform = 'scale(1)';
+                });
+                // Bunu seç
+                this.style.opacity = '1';
+                this.style.borderColor = '#10b981';
+                this.style.transform = 'scale(1.1)';
+                document.getElementById('liveJoinSelectedAvatar').value = `${i}.png`;
+            };
+            grid.appendChild(img);
+        }
+    }
 }
 /* Sistem Mesajları Kuralı: showOzelAlert Uygulaması */
 function showOzelAlert(message, type, callback = null, defaultValue = "") {
