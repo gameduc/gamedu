@@ -78,6 +78,26 @@ const AppConfig = {
             imageUrl: "./game pics/tugofwar.jpg", // Daha sonra oluşturulabilir
             isExternal: false,
             howToPlay: "<b>TUG OF WAR (Osmanlı Halat Çekme) Nasıl Oynanır?</b><br><br>• <b>Tanım:</b> Akıllı tahtada iki grubun (Yeşil vs Kırmızı) aynı anda yarıştığı dikey bölünmüş bir düello oyunudur.<br>• <b>Modlar:</b><br>- <b>Zaman Yarışı:</b> Belirlenen sürede en çok doğru cevabı veren takımı halatı kendi tarafına çeker.<br>- <b>Hız Düellosu:</b> İlk doğru cevabı veren takımı puanı (TAG) kapar ve halat o tarafa kayar.<br>• <b>Nasıl Oynanır:</b><br>- Ekranda her iki taraf için ayrı soru ve ayrı klavye (Matematik için rakam, Kelime için harf) belirir.<br>- Doğru cevabı yazdığınız an puan alırsınız ve halat size doğru çekilir.<br>- <b>Smart Gen:</b> Matematik modunda sistem seviyenize uygun (1-4. Sınıf) soruları otomatik üretir.<br><br>• <b>Kazanma Şartı:</b> Süre bittiğinde veya hedef puana ulaşıldığında halatı en çok kendine çeken taraf kazanır."
+        },
+        {
+            id: "trivia",
+            name: "GAMEDU TRIVIA",
+            description: "İster sınıf içinde, ister bireysel Kahoot tarzı devasa bir yarışma. Eşleştirme, D/Y, Pin, Yazma gibi özel modlarla donatılmış trivia!",
+            configSheet: "Trivia_Config",
+            themeColor: "#8b5cf6",
+            imageUrl: "./game pics/trivia_podium_cover.png",
+            isExternal: false,
+            howToPlay: "<b>GAMEDU TRIVIA Nasıl Oynanır?</b><br><br>• <b>Tanım:</b> Akıllı tahta ve mobil cihazların senkronize çalıştığı veya sadece akıllı tahtada oynanabilen devasa etkileşimli oyun modudur.<br>• <b>Nasıl Oynanır:</b><br>- Lobiden veya Setlerim menüsünden bir set oluşturun/seçin.<br>- Set yapılandırma ekranında soru tiplerini (Çoktan Seçmeli, D/Y, Eşleştirme vs.) ve içeriklerini düzenleyebilirsiniz.<br>- Oyunu başlattığınızda ekranda bir PIN belirir. Öğrenciler bu PIN ile oyuna cihazlarından katılabilir veya tahta modunu seçerseniz direkt iki yarışmacı tahtada kapışır.<br><br>• <b>Kazanma Şartı:</b> Soruların en çoğuna en kısa sürede doğru yanıtı veren kişi/gruplar liderlik tablosunda yükselir."
+        },
+        {
+            id: "avatarrun",
+            name: "AVATAR RUN",
+            description: "Takımlar halinde yarışarak Avatarınızı bitiş çizgisine ilk ulaştırmaya çalıştığınız, işbirliği odaklı nefes kesici takım yarışı!",
+            configSheet: "AvatarRun_Config",
+            themeColor: "#f43f5e",
+            imageUrl: "./game pics/avatar_run_cover.png",
+            isExternal: false,
+            howToPlay: "<b>AVATAR RUN Nasıl Oynanır?</b><br><br>• <b>Tanım:</b> Takım çalışması, iletişim ve kusursuz doğru bilme üzerine kuruludur.<br>• <b>Nasıl Oynanır:</b><br>- Öğrenciler lobiden katılır ve isteğe bağlı olarak takımlara bölünür (veya bireysel yarışır).<br>- Her takımın bir avatarı ana tahtadaki ilerleme parkurunda yarışır.<br>- Takımlı Modda: Sorunun şıkları takım üyelerinin telefonlarına DAĞITILIR. Doğru seçenek sadece bir kişidedir! Takım üyeleri konuşarak doğru şıkkın kimde olduğunu bulmalıdır.<br>- Eğer takımdan herhangi biri BİR YANLIŞ bile yaparsa takımın puanı SIFIRLANIR ve baştan başlarlar.<br><br>• <b>Kazanma Şartı:</b> Tüm soruları hiç hata yapmadan en hızlı şekilde tamamlayıp bitiş çizgisine ulaşan takım kazanır."
         }
     ],
 
