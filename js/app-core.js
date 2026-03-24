@@ -331,7 +331,7 @@ window.updateProfileNickname = function() {
 // Global scope'a ekliyoruz ki HTML'deki onclick erişebilsin
 window.handleNavTeacherBtn = function () {
     // Önce tüm oyun alanlarını kapat
-    const gameAreas = ['gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea', 'setupArea'];
+    const gameAreas = ['gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea', 'triviaGameArea', 'setupArea'];
     gameAreas.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
@@ -364,7 +364,7 @@ window.handleNavTeacherBtn = function () {
 
 window.goToLobby = function () {
     // Tüm gizlenmesi gereken component id'leri
-    const areasToHide = ['dashboardArea', 'setupArea', 'gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea'];
+    const areasToHide = ['dashboardArea', 'setupArea', 'gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea', 'triviaGameArea'];
     areasToHide.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
