@@ -123,22 +123,27 @@ window.filterSets = function (listId, inputId) {
     const filterText = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
     // Filtre Dropdown'ları (Aynı Satırdaki select etiketleri)
+    let typeFilter = "";
     let gradeFilter = "";
     let classFilter = "";
     let lessonFilter = "";
 
     // Tab Id'sine göre hangi dropdown'u okuyacağımızı seçiyoruz
     if (listId === 'globalSetsList') {
+        const tSelect = document.getElementById('globalFilterType');
         const gSelect = document.getElementById('globalFilterGrade');
         const cSelect = document.getElementById('globalFilterClass');
         const lSelect = document.getElementById('globalFilterLesson');
+        if (tSelect) typeFilter = tSelect.value.toLowerCase().trim();
         if (gSelect) gradeFilter = gSelect.value.toLowerCase().trim();
         if (cSelect) classFilter = cSelect.value.toLowerCase().trim();
         if (lSelect) lessonFilter = lSelect.value.toLowerCase().trim();
     } else if (listId === 'mySetsList') {
+        const mTSelect = document.getElementById('mySetsFilterType');
         const mSelect = document.getElementById('mySetsFilterGrade');
         const mSelectC = document.getElementById('mySetsFilterClass');
         const mSelectL = document.getElementById('mySetsFilterLesson');
+        if (mTSelect) typeFilter = mTSelect.value.toLowerCase().trim();
         if (mSelect) gradeFilter = mSelect.value.toLowerCase().trim();
         if (mSelectC) classFilter = mSelectC.value.toLowerCase().trim();
         if (mSelectL) lessonFilter = mSelectL.value.toLowerCase().trim();
@@ -150,18 +155,20 @@ window.filterSets = function (listId, inputId) {
         let card = cards[i];
 
         // Data Attributeları varsa oradan okuruz, yoksa boş sayarız
+        let cardType = (card.getAttribute('data-type') || "").toLowerCase();
         let cardGrade = (card.getAttribute('data-grade') || "").toLowerCase();
         let cardClass = (card.getAttribute('data-class') || "").toLowerCase();
         let cardLesson = (card.getAttribute('data-lesson') || "").toLowerCase();
         let cardText = (card.innerText || card.textContent || "").toLowerCase();
 
-        // 4 Şartın aynı anda tutması lazım (Süzgeçleme Mantığı)
+        // Şartların aynı anda tutması lazım (Süzgeçleme Mantığı)
         let matchesText = filterText === "" || cardText.indexOf(filterText) > -1;
+        let matchesType = typeFilter === "" || cardType === typeFilter;
         let matchesGrade = gradeFilter === "" || cardGrade === gradeFilter;
         let matchesClass = classFilter === "" || cardClass === classFilter;
         let matchesLesson = lessonFilter === "" || cardLesson === lessonFilter;
 
-        if (matchesText && matchesGrade && matchesClass && matchesLesson) {
+        if (matchesText && matchesType && matchesGrade && matchesClass && matchesLesson) {
             card.style.display = "";
         } else {
             card.style.display = "none";
@@ -331,7 +338,7 @@ window.updateProfileNickname = function() {
 // Global scope'a ekliyoruz ki HTML'deki onclick erişebilsin
 window.handleNavTeacherBtn = function () {
     // Önce tüm oyun alanlarını kapat
-    const gameAreas = ['gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea', 'triviaGameArea', 'setupArea'];
+    const gameAreas = ['gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea', 'triviaGameArea', 'avatarrunGameArea', 'setupArea'];
     gameAreas.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
@@ -364,7 +371,7 @@ window.handleNavTeacherBtn = function () {
 
 window.goToLobby = function () {
     // Tüm gizlenmesi gereken component id'leri
-    const areasToHide = ['dashboardArea', 'setupArea', 'gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea', 'triviaGameArea'];
+    const areasToHide = ['dashboardArea', 'setupArea', 'gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea', 'triviaGameArea', 'avatarrunGameArea'];
     areasToHide.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -408,6 +415,7 @@ if (tabExcelBtn && tabManualBtn) {
 function updateTemplateUI() {
     if (!setTypeSelect || !templateGuide) return;
     const isQPool = setTypeSelect.value === 'qpool';
+    const isSentence = setTypeSelect.value === 'sentence';
     const subTypeSelect = document.getElementById('setSubTypeSelect');
     const questionTypePreference = document.getElementById('questionTypePreference');
 
@@ -420,24 +428,45 @@ function updateTemplateUI() {
                 <strong>Açık Uçlu Soru Seti Excel Sütun Sırası (5 Sütun):</strong><br>
                 <span style="color:#ce3131; font-size:11px;">Not: Kırmızı yazılı başlıkların doldurulması ZORUNLUDUR!</span><br>
                 <code><span style="color:#ce3131;">Soru No</span> | <span style="color:#ce3131;">Soru Metni</span> | İpucu | <span style="color:#ce3131;">Doğru Cevap</span> | Resim URL</code>
-                <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına metin veya doğrudan bir görsel linki (http...jpg/png) girebilirsiniz. Görsel linki girerseniz oyunlarda tıklanabilir resim olarak görünür.</p>
+                <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına metin veya doğrudan bir görsel linki (http...jpg/png) girebilirsiniz.</p>
             `;
         } else {
             templateGuide.innerHTML = `
                 <strong>Çoktan Seçmeli Soru Seti Excel Sütun Sırası (10 Sütun):</strong><br>
                 <span style="color:#ce3131; font-size:11px;">Not: Kırmızı yazılı başlıkların doldurulması ZORUNLUDUR!</span><br>
                 <code><span style="color:#ce3131;">Soru No</span> | <span style="color:#ce3131;">Soru Metni</span> | İpucu | <span style="color:#ce3131;">A</span> | <span style="color:#ce3131;">B</span> | <span style="color:#ce3131;">C</span> | <span style="color:#ce3131;">D</span> | E | <span style="color:#ce3131;">Doğru Cevap</span> | Resim URL</code>
-                <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına metin veya doğrudan bir görsel linki (http...jpg/png) girebilirsiniz. Görsel linki girerseniz oyunlarda tıklanabilir resim olarak görünür.</p>
+                <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına metin veya doğrudan bir görsel linki (http...jpg/png) girebilirsiniz.</p>
             `;
         }
+    } else if (isSentence) {
+        if (questionTypePreference) questionTypePreference.style.display = 'none';
+        templateGuide.innerHTML = `
+            <strong>Cümle Seti (Unjumble Sentence) Excel Sütun Sırası (3 Sütun):</strong><br>
+            <span style="color:#ce3131; font-size:11px;">Not: Kırmızı yazılı başlıkların doldurulması ZORUNLUDUR!</span><br>
+            <code><span style="color:#ce3131;">Cümle (İngilizce vb.)</span> | Türkçe Çevirisi / Anlamı | İpucu</code>
+            <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına görsel linki (http...jpg/png) veya kısa bilgi girebilirsiniz.</p>
+        `;
     } else {
         if (questionTypePreference) questionTypePreference.style.display = 'none';
         templateGuide.innerHTML = `
             <strong>Kelime Seti (WordsPool) Excel Sütun Sırası (5 Sütun):</strong><br>
             <span style="color:#ce3131; font-size:11px;">Not: Kırmızı yazılı başlıkların doldurulması ZORUNLUDUR!</span><br>
             <code><span style="color:#ce3131;">Kelime</span> | İpucu | Türkçe Anlam | İngilizce Anlam | Resim URL</code>
-            <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına metin veya doğrudan bir görsel linki (http...jpg/png) girebilirsiniz. Görsel linki girerseniz oyunlarda tıklanabilir resim olarak görünür.</p>
+            <p style="font-size:11px; margin-top:5px; color:#6b7280;">* İpucu kısmına metin veya doğrudan bir görsel linki (http...jpg/png) girebilirsiniz.</p>
         `;
     }
 }
 
+// SPA Modüllerini Gizleme Yardımcısı
+window.hideAllSections = function() {
+    const areas = ['dashboardArea', 'setupArea', 'gameArea', 'lingoGameArea', 'beeCombGameArea', 'dictionaryGameArea', 'baambooGameArea', 'quickRevealGameArea', 'triviaGameArea', 'avatarrunGameArea', 'unjumbleGameArea'];
+    areas.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    
+    // Ayrıca tüm hidden-spa-module classlı elemanları gizle
+    document.querySelectorAll('.hidden-spa-module').forEach(el => {
+        el.style.display = 'none';
+    });
+};
