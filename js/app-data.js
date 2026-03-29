@@ -65,6 +65,28 @@ function parseHibritData(rawData, setType, subType = 'coktan_secmeli', globalLev
                     OptionA: optA, OptionB: optB, OptionC: optC, OptionD: optD, OptionE: optE,
                     CorrectAnswer: correctAns
                 });
+            } else if (setType === 'sentence') {
+                if (parts.length >= 1) {
+                    let s_text = parts[0] ? parts[0].trim() : "";
+
+                    if (!globalLevel) errors.push(`Satır ${rowNum}: 'Set Kademesi' formdan seçilmemiş!`);
+                    if (!globalClass) errors.push(`Satır ${rowNum}: 'Sınıf' formdan seçilmemiş!`);
+                    if (!globalLesson) errors.push(`Satır ${rowNum}: 'Ders' formdan girilmemiş!`);
+                    if (!globalTopic) errors.push(`Satır ${rowNum}: 'Ünite' formdan girilmemiş!`);
+                    if (!s_text) errors.push(`Satır ${rowNum}: 'Cümle' boş bırakılamaz!`);
+
+                    parsedArray.push({
+                        Level: globalLevel,
+                        Grade: globalLevel,
+                        ClassGrade: globalClass,
+                        Lesson: globalLesson,
+                        Topic: globalTopic,
+                        Unit: globalTopic,
+                        SentenceText: s_text,
+                        SentenceTR: parts.length > 1 ? (parts[1] ? parts[1].trim() : "") : "",
+                        Clue: parts.length > 2 ? (parts[2] ? parts[2].trim() : "") : ""
+                    });
+                }
             } else {
                 if (parts.length >= 1) {
                     let w_word = parts[0] ? parts[0].trim() : "";
@@ -273,16 +295,20 @@ function loadMySets() {
                 if (setVal.Author_Email === 'aahmetaytekin@gmail.com') authorName = 'GamEdu';
 
                 // Kartın HTML elementine data- attributelarını bas
+                card.setAttribute('data-type', setVal.Type.toLowerCase());
                 card.setAttribute('data-grade', itemGrade.toLowerCase());
                 card.setAttribute('data-class', itemClass.toLowerCase());
                 card.setAttribute('data-lesson', itemLesson.toLowerCase());
+
+                let typeLabel = setVal.Type === 'sentence' ? 'Cümle Seti' : (isQPool ? (setVal.SubType === 'acik_uclu' ? 'Açık Uçlu Soru' : 'Çoktan Seçmeli Soru') : 'Kelime Seti');
+                let sampleTxt = setVal.Data && setVal.Data[0] ? (setVal.Type === 'sentence' ? setVal.Data[0].SentenceText : (isQPool ? setVal.Data[0].QuestionText : setVal.Data[0].Word)) : 'Boş Set';
 
                 card.innerHTML = `
                     <div class="set-detail" style="width: 100%;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
                             <h4 style="margin:0;">${setVal.Title} 
                                 <span style="font-size: 11px; font-weight:normal; color: ${setVal.IsPublic ? '#15803d' : '#b91c1c'}; background: ${setVal.IsPublic ? '#dcfce7' : '#fee2e2'}; padding: 2px 6px; border-radius: 12px; margin-left: 5px;">${setVal.IsPublic ? '🌎 Genel' : '🔒 Gizli'}</span> 
-                                <span style="font-size: 11px; font-weight:normal; background:#e0e7ff; color:#3730a3; padding: 2px 6px; border-radius: 12px; margin-left: 5px;">${isQPool ? (setVal.SubType === 'acik_uclu' ? 'Açık Uçlu Soru' : 'Çoktan Seçmeli Soru') : 'Kelime Seti'} (${setVal.ItemCount} Kayıt)</span>
+                                <span style="font-size: 11px; font-weight:normal; background:#e0e7ff; color:#3730a3; padding: 2px 6px; border-radius: 12px; margin-left: 5px;">${typeLabel} (${setVal.ItemCount} Kayıt)</span>
                             </h4>
                             <span style="font-size: 12px; color: #94a3b8;">Yazar: <strong style="color: #cbd5e1;">${authorName}</strong></span>
                         </div>
@@ -292,7 +318,7 @@ function loadMySets() {
                             <span style="background:rgba(59,130,246,0.1); color:#60a5fa; padding: 3px 8px; border-radius: 4px; border:1px solid rgba(59,130,246,0.2);">Ders: ${itemLesson}</span>
                             <span style="background:rgba(59,130,246,0.1); color:#60a5fa; padding: 3px 8px; border-radius: 4px; border:1px solid rgba(59,130,246,0.2);">Konu/Ünite: ${itemTopic}</span>
                         </div>
-                        <p style="margin: 0; font-size: 13px; color: #94a3b8;">Örnek: <i style="color:#cbd5e1;">${sampleData} ...</i></p>
+                        <p style="margin: 0; font-size: 13px; color: #94a3b8;">Örnek: <i style="color:#cbd5e1;">${sampleTxt} ...</i></p>
                     </div>
                     <div class="set-actions" style="margin-top: 10px; width: 100%; display:flex; justify-content:flex-end;">
                         <button class="action-btn btn-edit" onclick="openCrudModal('${setKey}')">⚙ Düzenle / İncele</button>
@@ -349,15 +375,19 @@ function loadGlobalSets() {
                 if (setVal.Author_Email === 'aahmetaytekin@gmail.com') authorName = 'GamEdu';
 
                 // Kartın HTML elementine data- attributelarını bas
+                card.setAttribute('data-type', setVal.Type.toLowerCase());
                 card.setAttribute('data-grade', itemGrade.toLowerCase());
                 card.setAttribute('data-class', itemClass.toLowerCase());
                 card.setAttribute('data-lesson', itemLesson.toLowerCase());
+
+                let typeLabel = setVal.Type === 'sentence' ? 'Cümle Seti' : (isQPool ? (setVal.SubType === 'acik_uclu' ? 'Açık Uçlu Soru' : 'Çoktan Seçmeli Soru') : 'Kelime Seti');
+                let sampleTxt = setVal.Data && setVal.Data[0] ? (setVal.Type === 'sentence' ? setVal.Data[0].SentenceText : (isQPool ? setVal.Data[0].QuestionText : setVal.Data[0].Word)) : 'Boş Set';
 
                 card.innerHTML = `
                     <div class="set-detail" style="width: 100%;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
                             <h4 style="margin:0;">${setVal.Title} 
-                                <span style="font-size: 11px; font-weight:normal; background:#e0e7ff; color:#3730a3; padding: 2px 6px; border-radius: 12px; margin-left: 5px;">${isQPool ? (setVal.SubType === 'acik_uclu' ? 'Açık Uçlu Soru' : 'Çoktan Seçmeli Soru') : 'Kelime Seti'} (${setVal.ItemCount} Kayıt)</span>
+                                <span style="font-size: 11px; font-weight:normal; background:#e0e7ff; color:#3730a3; padding: 2px 6px; border-radius: 12px; margin-left: 5px;">${typeLabel} (${setVal.ItemCount} Kayıt)</span>
                             </h4>
                             <span style="font-size: 12px; color: #94a3b8;">Yazar: <strong style="color: #cbd5e1;">${authorName}</strong></span>
                         </div>
@@ -367,7 +397,7 @@ function loadGlobalSets() {
                             <span style="background:rgba(59,130,246,0.1); color:#60a5fa; padding: 3px 8px; border-radius: 4px; border:1px solid rgba(59,130,246,0.2);">Ders: ${itemLesson}</span>
                             <span style="background:rgba(59,130,246,0.1); color:#60a5fa; padding: 3px 8px; border-radius: 4px; border:1px solid rgba(59,130,246,0.2);">Konu/Ünite: ${itemTopic}</span>
                         </div>
-                        <p style="margin: 0; font-size: 13px; color: #94a3b8;">Örnek: <i style="color:#cbd5e1;">${sampleData} ...</i></p>
+                        <p style="margin: 0; font-size: 13px; color: #94a3b8;">Örnek: <i style="color:#cbd5e1;">${sampleTxt} ...</i></p>
                     </div>
                     <div class="set-actions" style="margin-top: 10px; width:100%; display:flex; justify-content:flex-end; gap:5px;">
                         ${isMySet
