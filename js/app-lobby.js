@@ -298,37 +298,69 @@ function loadGameSetup(game, configSheet) {
         ];
         populateSetupForm(qrConfig);
 
+        // Grid Kurgusu
+        setTimeout(() => {
+            const setupFormObj = document.getElementById('dynamicSetupForm');
+            if (setupFormObj) {
+                setupFormObj.style.display = 'grid';
+                setupFormObj.style.gridTemplateColumns = 'repeat(12, 1fr)';
+                setupFormObj.style.gap = '15px';
+                setupFormObj.style.alignItems = 'start';
+
+                const getParent = (id) => { const el = document.getElementById(id); return el ? el.closest('.form-group') : null; };
+                const fGrp = getParent('NumGroups');
+                const fCat = getParent('QrCategory');
+                const fSub = getParent('QrSubCategory');
+                const fMin = getParent('QrMin');
+                const fMax = getParent('QrMax');
+                const fTime = getParent('QrTimeType');
+                const fCust = getParent('QrCustomData');
+
+                if (fGrp) { fGrp.style.gridColumn = 'span 4'; setupFormObj.appendChild(fGrp); }
+                if (fCat) { fCat.style.gridColumn = 'span 4'; setupFormObj.appendChild(fCat); }
+                if (fSub) { fSub.style.gridColumn = 'span 4'; setupFormObj.appendChild(fSub); }
+                if (fTime) { fTime.style.gridColumn = 'span 4'; setupFormObj.appendChild(fTime); }
+                if (fMin) { fMin.style.gridColumn = 'span 4'; setupFormObj.appendChild(fMin); }
+                if (fMax) { fMax.style.gridColumn = 'span 4'; setupFormObj.appendChild(fMax); }
+
+                const mOpsInputs = document.querySelectorAll('input[name="QrMathOps"]');
+                if (mOpsInputs.length > 0) mOpsInputs[0].closest('.form-group').style.gridColumn = 'span 12';
+
+                const iOpsInputs = document.querySelectorAll('input[name="QrIrregularOps"]');
+                if (iOpsInputs.length > 0) iOpsInputs[0].closest('.form-group').style.gridColumn = 'span 12';
+
+                if (fCust) { fCust.style.gridColumn = 'span 12'; setupFormObj.appendChild(fCust); }
+
+                // Özel Set Butonu (En Üste)
+                if (!document.getElementById('qrCustomSetModeBtn')) {
+                    const btn = document.createElement('button');
+                    btn.id = 'qrCustomSetModeBtn';
+                    btn.className = 'login-btn fade-in';
+                    btn.style = 'grid-column: span 12; margin-bottom:5px; width:100%; background:var(--glass-bg); border: 2px dashed #10b981; color:#10b981; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(16, 185, 129, 0.2);';
+                    btn.innerHTML = '✨ Kendi Görsel/Kelime Setini Oluştur';
+                    setupFormObj.prepend(btn);
+
+                    const catEl = document.getElementById('QrCategory');
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        if (!catEl) return;
+                        let customOpt = Array.from(catEl.options).find(o => o.value === 'Custom Image Set');
+                        if (!customOpt) {
+                            customOpt = document.createElement('option');
+                            customOpt.value = 'Custom Image Set';
+                            customOpt.textContent = 'Kendi Özel Setim';
+                            catEl.appendChild(customOpt);
+                        }
+                        catEl.value = 'Custom Image Set';
+                        catEl.dispatchEvent(new Event('change'));
+                    };
+                }
+            }
+        }, 80);
+
         // Kategoriye Göre Form Filtreleme Mantığı
         setTimeout(() => {
             const catEl = document.getElementById('QrCategory');
-
-            // --- Kendi Setini Oluştur Butonu Enjeksiyonu ---
-            const setupFormObj = document.getElementById('dynamicSetupForm');
-            if (setupFormObj && !document.getElementById('qrCustomSetModeBtn')) {
-                const btn = document.createElement('button');
-                btn.id = 'qrCustomSetModeBtn';
-                btn.className = 'login-btn fade-in';
-                btn.style = 'margin-bottom:15px; width:100%; background:var(--glass-bg); border: 2px dashed #10b981; color:#10b981; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(16, 185, 129, 0.2);';
-                btn.innerHTML = '✨ Kendi Görsel/Kelime Setini Oluştur';
-                setupFormObj.prepend(btn);
-
-                btn.onclick = (e) => {
-                    e.preventDefault();
-                    if (!catEl) return;
-                    // Option Listesinde Yoksa Geçici Olarak Ekle
-                    let customOpt = Array.from(catEl.options).find(o => o.value === 'Custom Image Set');
-                    if (!customOpt) {
-                        customOpt = document.createElement('option');
-                        customOpt.value = 'Custom Image Set';
-                        customOpt.textContent = 'Kendi Özel Setim';
-                        catEl.appendChild(customOpt);
-                    }
-                    catEl.value = 'Custom Image Set';
-                    const event = new Event('change');
-                    catEl.dispatchEvent(event);
-                };
-            }
-            // ---------------------------------------------
 
             function updateQrForm() {
                 if (!catEl) return;
@@ -346,7 +378,7 @@ function loadGameSetup(game, configSheet) {
                 let iOpsGroup = null;
                 if (iOpsInputs.length > 0) iOpsGroup = iOpsInputs[0].closest('.form-group');
 
-                const customDataGroup = document.getElementById('QrCustomData')?.parentElement;
+                const customDataGroup = document.getElementById('QrCustomData')?.closest('.form-group');
 
                 const val = catEl.value;
                 if (val === 'Time') {
@@ -438,7 +470,7 @@ function loadGameSetup(game, configSheet) {
                         { SettingName: "SetPreference", DisplayName: "Set Tercihi", Type: "toggle", OptionsSource: "GamEdu Keşfet,Benim Setlerim", DefaultValue: "GamEdu Keşfet" },
                         { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
                         { SettingName: "BbCountdown", DisplayName: "Süre (Saniye)", Type: "number", DefaultValue: 15, Min: 10, Max: 120 },
-                        { SettingName: "BbIsMultipleChoice", DisplayName: "Soru Tipi", Type: "toggle", OptionsSource: "Tümü,Çoktan Seçmeli,Açık Uçlu", DefaultValue: "Tümü" },
+                        { SettingName: "BbIsMultipleChoice", DisplayName: "Soru Tipi", Type: "toggle", OptionsSource: "Açık Uçlu,Çoktan Seçmeli", DefaultValue: "Açık Uçlu" },
                         { SettingName: "BbLevel", DisplayName: "Kademe", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
                         { SettingName: "BbClass", DisplayName: "Sınıf", Type: "dropdown", OptionsSource: "Tümü", DefaultValue: "Tümü" },
                         { SettingName: "BbLesson", DisplayName: "Ders", Type: "dropdown", OptionsSource: "Tümü", DefaultValue: "Tümü" },
@@ -446,6 +478,37 @@ function loadGameSetup(game, configSheet) {
                     ];
 
                     populateSetupForm(bbConfig);
+
+                    setTimeout(() => {
+                        const setupFormEl = document.getElementById('dynamicSetupForm');
+                        if (setupFormEl) {
+                            setupFormEl.style.display = 'grid';
+                            setupFormEl.style.gridTemplateColumns = 'repeat(12, 1fr)';
+                            setupFormEl.style.gap = '15px';
+                            setupFormEl.style.alignItems = 'start';
+
+                            const getParent = (id) => { const el = document.getElementById(id); return el ? el.closest('.form-group') : null; };
+                            const fPref = getParent('SetPreference');
+                            const fGrp = getParent('NumGroups');
+                            const fTime = getParent('BbCountdown');
+                            const fType = getParent('BbIsMultipleChoice');
+                            const fLvl = getParent('BbLevel');
+                            const fCls = getParent('BbClass');
+                            const fLes = getParent('BbLesson');
+                            const fSets = getParent('BbSetsCheckbox');
+
+                            if (fPref) { fPref.style.gridColumn = 'span 4'; setupFormEl.appendChild(fPref); }
+                            if (fGrp) { fGrp.style.gridColumn = 'span 2'; setupFormEl.appendChild(fGrp); }
+                            if (fTime) { fTime.style.gridColumn = 'span 2'; setupFormEl.appendChild(fTime); }
+                            if (fType) { fType.style.gridColumn = 'span 4'; setupFormEl.appendChild(fType); }
+
+                            if (fLvl) { fLvl.style.gridColumn = 'span 4'; setupFormEl.appendChild(fLvl); }
+                            if (fCls) { fCls.style.gridColumn = 'span 4'; setupFormEl.appendChild(fCls); }
+                            if (fLes) { fLes.style.gridColumn = 'span 4'; setupFormEl.appendChild(fLes); }
+
+                            if (fSets) { fSets.style.gridColumn = 'span 12'; setupFormEl.appendChild(fSets); }
+                        }
+                    }, 80);
 
                     // Dependent Dropdown İçin Event Listener'lar
                     setTimeout(() => {
@@ -596,7 +659,7 @@ function loadGameSetup(game, configSheet) {
                     let rows = [];
                     if (snapshot.exists()) {
                         const allData = snapshot.val();
-                        Object.values(allData).forEach(set => {
+                        Object.entries(allData).forEach(([setKey, set]) => {
                             // DİCTIONARY İÇİN İNGİLİZCE FİLTRESİ (geniş eşleştirme)
                             const ingRegex = /ing|eng|ingilizce|english|İng|İngilizce/i;
                             let setGlobalLesson = set.GlobalLesson || "";
@@ -605,22 +668,15 @@ function loadGameSetup(game, configSheet) {
                                 return;
                             }
 
-                            if (set.Data && Array.isArray(set.Data)) {
-                                set.Data.forEach(item => {
-                                    let itemLesson = (item.Lesson || "").toLowerCase();
-                                    // Kelime bazlı ders varsa ve İngilizceyle ilgili değilse atla
-                                    if (itemLesson && !setGlobalLesson && !ingRegex.test(itemLesson)) {
-                                        return;
-                                    }
-
-                                    rows.push({
-                                        cls: item.ClassGrade || item.Level || "Tümü",
-                                        lesson: item.Lesson || set.GlobalLesson || "İngilizce",
-                                        author: set.Author_ID,
-                                        isPublic: set.IsPublic === undefined ? true : set.IsPublic
-                                    });
-                                });
-                            }
+                            rows.push({
+                                id: setKey,
+                                title: set.Title || "İsimsiz Set",
+                                level: set.GlobalLevel || "Tümü",
+                                cls: set.GlobalClass || "Tümü",
+                                lesson: setGlobalLesson || "İngilizce",
+                                author: set.Author_ID,
+                                isPublic: set.IsPublic === undefined ? true : set.IsPublic
+                            });
                         });
                     }
                     window.dictRawData = rows;
@@ -628,37 +684,86 @@ function loadGameSetup(game, configSheet) {
                     const dictConfig = [
                         { SettingName: "SetPreference", DisplayName: "Set Tercihi", Type: "toggle", OptionsSource: "GamEdu Keşfet,Benim Setlerim", DefaultValue: "GamEdu Keşfet" },
                         { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
-                        { SettingName: "WinTarget", DisplayName: "Kazanma Hedefi (Kaç Kelime)", Type: "number", DefaultValue: 3, Min: 1, Max: 10 },
-                        { SettingName: "UseCustomNames", DisplayName: "Özel Grup/Öğrenci İsimleri", Type: "toggle", OptionsSource: "Hayır,Evet", DefaultValue: "Hayır" },
-                        { SettingName: "CustomGroupNames", DisplayName: "İsimler (Virgüllerle Ayrılmış)", Type: "text", DefaultValue: "Örn: Ali, Ayşe, Fatma" },
-                        { SettingName: "DictClass", DisplayName: "Sınıf / Kademe (Opsiyonel)", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
-                        { SettingName: "DictLesson", DisplayName: "Ders (Opsiyonel)", Type: "dropdown", OptionsSource: "Tümü", DefaultValue: "Tümü" },
-                        { SettingName: "DictUnitStart", DisplayName: "Başlangıç Ünitesi", Type: "number", DefaultValue: 1, Min: 1, Max: 50 },
-                        { SettingName: "DictUnitEnd", DisplayName: "Bitiş Ünitesi", Type: "number", DefaultValue: 10, Min: 1, Max: 50 }
+                        { SettingName: "WinTarget", DisplayName: "Kazanma Hedefi (Kaç Kelime)", Type: "number", DefaultValue: 3, Min: 1, Max: 20 },
+                        { SettingName: "GlobalLevelFilter", DisplayName: "Kademe", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
+                        { SettingName: "GlobalClassFilter", DisplayName: "Sınıf", Type: "dropdown", OptionsSource: "Tümü", DefaultValue: "Tümü" },
+                        { SettingName: "GlobalLessonFilter", DisplayName: "Ders", Type: "dropdown", OptionsSource: "Tümü", DefaultValue: "Tümü" },
+                        { SettingName: "SelectedSets", DisplayName: "Oynanacak Setler", Type: "multiselect", OptionsSource: "Seçim Bekleniyor", DefaultValue: "" }
                     ];
 
                     populateSetupForm(dictConfig);
-                    bindDictionaryCustomNamesToggle();
+
+                    setTimeout(() => {
+                        const setupFormEl = document.getElementById('dynamicSetupForm');
+                        if (setupFormEl) {
+                            setupFormEl.style.display = 'grid';
+                            setupFormEl.style.gridTemplateColumns = 'repeat(12, 1fr)';
+                            setupFormEl.style.gap = '15px';
+                            setupFormEl.style.alignItems = 'start';
+
+                            const getParent = (id) => { const el = document.getElementById(id); return el ? el.closest('.form-group') : null; };
+                            const fPref = getParent('SetPreference');
+                            const fGrp = getParent('NumGroups');
+                            const fWin = getParent('WinTarget');
+                            const fLvl = getParent('GlobalLevelFilter');
+                            const fCls = getParent('GlobalClassFilter');
+                            const fLes = getParent('GlobalLessonFilter');
+                            const fSets = getParent('SelectedSets');
+
+                            if (fPref) { fPref.style.gridColumn = 'span 4'; setupFormEl.appendChild(fPref); }
+                            if (fGrp) { fGrp.style.gridColumn = 'span 4'; setupFormEl.appendChild(fGrp); }
+                            if (fWin) { fWin.style.gridColumn = 'span 4'; setupFormEl.appendChild(fWin); }
+
+                            if (fLvl) { fLvl.style.gridColumn = 'span 4'; setupFormEl.appendChild(fLvl); }
+                            if (fCls) { fCls.style.gridColumn = 'span 4'; setupFormEl.appendChild(fCls); }
+                            if (fLes) { fLes.style.gridColumn = 'span 4'; setupFormEl.appendChild(fLes); }
+
+                            if (fSets) { fSets.style.gridColumn = 'span 12'; setupFormEl.appendChild(fSets); }
+                        }
+                    }, 80);
 
                     setTimeout(() => {
                         const dPref = document.getElementById('SetPreference');
                         const prefContainer = dPref ? dPref.parentElement : null;
 
-                        const dCls = document.getElementById('DictClass');
-                        const dLes = document.getElementById('DictLesson');
+                        const dLvl = document.getElementById('GlobalLevelFilter');
+                        const dCls = document.getElementById('GlobalClassFilter');
+                        const dLes = document.getElementById('GlobalLessonFilter');
                         const btnStart = document.getElementById('startGameBtn');
 
-                        function updateDictDropdowns(e) {
-                            const changedId = e ? e.target.id : null;
+                        function updateMebFilters() {
+                            let fMeb = window.dictRawData || [];
+                            if (dLvl && dLvl.value !== "Tümü") fMeb = fMeb.filter(r => r.level === dLvl.value);
 
-                            const selPref = dPref ? dPref.value : "GamEdu Keşfet";
-                            let selCls = dCls ? dCls.value : "Tümü";
-                            let selLes = dLes ? dLes.value : "Tümü";
+                            if (dCls) {
+                                const selCls = dCls.value;
+                                const opts = ["Tümü", ...Array.from(new Set(fMeb.map(r => r.cls).filter(Boolean)))];
+                                opts.sort((a, b) => {
+                                    if (a === "Tümü") return -1; if (b === "Tümü") return 1;
+                                    const nA = parseInt(a); const nB = parseInt(b);
+                                    if (!isNaN(nA) && !isNaN(nB)) return nA - nB;
+                                    return a.localeCompare(b);
+                                });
+                                dCls.innerHTML = opts.map(t => `<option value="${t}">${t}</option>`).join('');
+                                if (opts.includes(selCls)) dCls.value = selCls; else dCls.value = "Tümü";
+                            }
 
+                            if (dCls && dCls.value !== "Tümü") fMeb = fMeb.filter(r => r.cls === dCls.value);
+
+                            if (dLes) {
+                                const selLes = dLes.value;
+                                const opts = ["Tümü", ...Array.from(new Set(fMeb.map(r => r.lesson).filter(Boolean))).sort()];
+                                dLes.innerHTML = opts.map(t => `<option value="${t}">${t}</option>`).join('');
+                                if (opts.includes(selLes)) dLes.value = selLes; else dLes.value = "Tümü";
+                            }
+                        }
+
+                        function updateDictDropdowns() {
                             let filtered = window.dictRawData || [];
 
+                            const selPref = dPref ? dPref.value : "GamEdu Keşfet";
                             if (selPref === "Benim Setlerim") {
-                                if (currentUser) {
+                                if (typeof currentUser !== 'undefined' && currentUser) {
                                     filtered = filtered.filter(r => r.author === currentUser.uid);
                                 } else {
                                     filtered = [];
@@ -667,40 +772,58 @@ function loadGameSetup(game, configSheet) {
                                 filtered = filtered.filter(r => r.isPublic === true);
                             }
 
-                            if (filtered.length === 0) {
-                                if (dCls) dCls.innerHTML = '<option value="Tümü">Kayıt Yok</option>';
-                                if (dLes) dLes.innerHTML = '<option value="Tümü">Kayıt Yok</option>';
-                                if (btnStart) {
-                                    btnStart.disabled = true;
-                                    btnStart.textContent = "Bu Tercihte Set Yok";
-                                }
-                                return;
-                            } else {
-                                if (btnStart) {
-                                    btnStart.disabled = false;
-                                    btnStart.textContent = "Oyunu Başlat";
-                                }
-                            }
+                            if (dLvl && dLvl.value !== "Tümü") filtered = filtered.filter(r => r.level === dLvl.value);
+                            if (dCls && dCls.value !== "Tümü") filtered = filtered.filter(r => r.cls === dCls.value);
+                            if (dLes && dLes.value !== "Tümü") filtered = filtered.filter(r => r.lesson === dLes.value);
 
-                            // Kademe statik olduğu için DİNAMİK POPULATE EDİLMİYOR.
-                            // if (changedId === 'SetPreference' || !changedId) { ... }
+                            const cbCont = document.getElementById('SelectedSets');
+                            if (cbCont) {
+                                cbCont.innerHTML = '';
+                                if (filtered.length === 0) {
+                                    cbCont.innerHTML = '<span style="color:#ef4444; font-size:0.9rem;">Seçili kriterlere uygun set bulunamadı.</span>';
+                                    if (btnStart) {
+                                        btnStart.disabled = true;
+                                        btnStart.textContent = 'Uygun Set Yok';
+                                        btnStart.style.opacity = '0.5';
+                                        btnStart.style.pointerEvents = 'none';
+                                    }
+                                } else {
+                                    filtered.forEach(s => {
+                                        const checkboxId = `DictSetsCheckbox_${s.id}`;
+                                        const optContainer = document.createElement('label');
+                                        optContainer.setAttribute('for', checkboxId);
+                                        optContainer.style.cssText = "display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-bottom:4px; font-weight:normal; font-size:0.9rem; cursor:pointer;";
 
-                            if (changedId === 'DictClass' || changedId === 'SetPreference' || !changedId) {
-                                let fLes = filtered;
-                                if (dCls && dCls.value !== "Tümü") fLes = fLes.filter(r => r.cls === dCls.value);
-                                if (dLes) {
-                                    const opts = ["Tümü", ...Array.from(new Set(fLes.map(r => r.lesson).filter(Boolean))).sort()];
-                                    dLes.innerHTML = opts.map(t => `<option value="${t}">${t}</option>`).join('');
-                                    if (opts.includes(selLes)) dLes.value = selLes; else { dLes.value = "Tümü"; selLes = "Tümü"; }
+                                        const checkbox = document.createElement('input');
+                                        checkbox.type = 'checkbox';
+                                        checkbox.id = checkboxId;
+                                        checkbox.name = 'SelectedSets';
+                                        checkbox.value = s.id;
+                                        checkbox.checked = true; // Auto-check
+                                        checkbox.style.cssText = "width:18px; height:18px; cursor:pointer;";
+
+                                        optContainer.appendChild(checkbox);
+                                        optContainer.appendChild(document.createTextNode(s.title));
+                                        cbCont.appendChild(optContainer);
+                                    });
+                                    if (btnStart) {
+                                        btnStart.disabled = false;
+                                        btnStart.textContent = 'Oyunu Başlat';
+                                        btnStart.style.opacity = '1';
+                                        btnStart.style.pointerEvents = 'auto';
+                                    }
                                 }
                             }
                         }
 
-                        if (prefContainer) prefContainer.addEventListener('click', () => { setTimeout(updateDictDropdowns, 50); });
-                        if (dCls) dCls.addEventListener('change', updateDictDropdowns);
+                        if (dLvl) dLvl.addEventListener('change', () => { updateMebFilters(); updateDictDropdowns(); });
+                        if (dCls) dCls.addEventListener('change', () => { updateMebFilters(); updateDictDropdowns(); });
                         if (dLes) dLes.addEventListener('change', updateDictDropdowns);
+                        if (prefContainer) prefContainer.addEventListener('click', () => { setTimeout(updateDictDropdowns, 50); });
 
+                        updateMebFilters();
                         updateDictDropdowns();
+
                     }, 200);
 
                 })
@@ -727,6 +850,185 @@ function loadGameSetup(game, configSheet) {
                     updateVisibility();
                 }
             }, 100);
+        }
+    }
+    else if (game.id === 'unjumble') {
+        const setupFormObj = document.getElementById('dynamicSetupForm');
+        setupFormObj.innerHTML = '<p style="color:white; text-align:center;">Unjumble Setleri Yükleniyor...</p>';
+
+        if (typeof database !== 'undefined') {
+            database.ref('MasterPool').once('value')
+                .then(snapshot => {
+                    let rows = [];
+                    if (snapshot.exists()) {
+                        const allData = snapshot.val();
+                        Object.entries(allData).forEach(([setKey, set]) => {
+                            if (set.Type === 'sentence') {
+                                rows.push({
+                                    id: setKey,
+                                    title: set.Title || "İsimsiz Cümle Seti",
+                                    type: set.Type || "sentence",
+                                    author: set.Author_ID,
+                                    isPublic: set.IsPublic === undefined ? true : set.IsPublic,
+                                    level: set.GlobalLevel || "Tümü",
+                                    cls: set.GlobalClass || "Tümü",
+                                    lesson: set.GlobalLesson || "Tümü"
+                                });
+                            }
+                        });
+                    }
+                    window.unjumbleRawData = rows;
+
+                    const unjumbleConfig = [
+                        { SettingName: "SetPreference", DisplayName: "Set Tercihi", Type: "dropdown", OptionsSource: "GamEdu Keşfet,Benim Setlerim", DefaultValue: "GamEdu Keşfet" },
+                        { SettingName: "GlobalLevelFilter", DisplayName: "Kademe", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
+                        { SettingName: "GlobalClassFilter", DisplayName: "Sınıf", Type: "dropdown", OptionsSource: "Tümü,1. Sınıf,2. Sınıf,3. Sınıf,4. Sınıf,5. Sınıf,6. Sınıf,7. Sınıf,8. Sınıf,9. Sınıf,10. Sınıf,11. Sınıf,12. Sınıf", DefaultValue: "Tümü" },
+                        { SettingName: "GlobalLessonFilter", DisplayName: "Ders", Type: "dropdown", OptionsSource: "Tümü,İngilizce,Türkçe,Matematik,Fen Bilimleri,Sosyal Bilgiler,Din Kültürü", DefaultValue: "Tümü" },
+                        { SettingName: "SelectedSets", DisplayName: "Oynanacak Cümle Setleri", Type: "multiselect", OptionsSource: "Seçim Bekleniyor", DefaultValue: "" }
+                    ];
+
+                    populateSetupForm(unjumbleConfig);
+
+                    setTimeout(() => {
+                        const dynamicForm = document.getElementById('dynamicSetupForm');
+
+                        // YENİ SET OLUŞTUR BUTONU (En üstte)
+                        if (dynamicForm && !document.getElementById('openUnjumbleCreatorBtn')) {
+                            const btn = document.createElement('button');
+                            btn.id = 'openUnjumbleCreatorBtn';
+                            btn.className = 'login-btn fade-in';
+                            btn.style = 'grid-column: 1 / -1; margin-bottom:15px; width:100%; background:var(--glass-bg); border: 2px dashed #6366f1; color:#a78bfa; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(99, 102, 241, 0.2);';
+                            btn.innerHTML = '✨ Liste Yönetim Panelinden Yeni Cümle Seti Oluştur';
+                            dynamicForm.prepend(btn);
+
+                            btn.onclick = (e) => {
+                                e.preventDefault();
+                                window.handleNavTeacherBtn();
+                                setTimeout(() => window.switchDashboardTab('createSetTab'), 300);
+                            };
+                        }
+
+                        if (dynamicForm) {
+                            dynamicForm.style.display = 'grid';
+                            dynamicForm.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                            dynamicForm.style.gap = '15px';
+                            dynamicForm.style.alignItems = 'start';
+
+                            const getParent = (id) => { const el = document.getElementById(id); return el ? el.closest('.form-group') : null; };
+
+                            const prefGroup = getParent('SetPreference');
+                            const filterLvlGroup = getParent('GlobalLevelFilter');
+                            const filterClsGroup = getParent('GlobalClassFilter');
+                            const filterLesGroup = getParent('GlobalLessonFilter');
+                            const setsGroup = getParent('SelectedSets');
+
+                            if (prefGroup) { prefGroup.style.gridColumn = 'span 3'; dynamicForm.appendChild(prefGroup); }
+                            if (filterLvlGroup) { filterLvlGroup.style.gridColumn = 'span 1'; dynamicForm.appendChild(filterLvlGroup); }
+                            if (filterClsGroup) { filterClsGroup.style.gridColumn = 'span 1'; dynamicForm.appendChild(filterClsGroup); }
+                            if (filterLesGroup) { filterLesGroup.style.gridColumn = 'span 1'; dynamicForm.appendChild(filterLesGroup); }
+                            if (setsGroup) { setsGroup.style.gridColumn = 'span 3'; dynamicForm.appendChild(setsGroup); }
+                        }
+
+                        // Dinamik Dropdown ve Multiselect Filtrelemesi
+                        const prefContainer = document.getElementById('SetPreference');
+                        const dLvl = document.getElementById('GlobalLevelFilter');
+                        const dCls = document.getElementById('GlobalClassFilter');
+                        const dLes = document.getElementById('GlobalLessonFilter');
+                        const btnStart = document.getElementById('btnStartGame');
+
+                        function updateMebFilters() {
+                            let fMeb = window.unjumbleRawData || [];
+                            if (dLvl && dLvl.value !== "Tümü") fMeb = fMeb.filter(r => r.level === dLvl.value);
+
+                            if (dCls) {
+                                const selCls = dCls.value;
+                                const opts = ["Tümü", ...Array.from(new Set(fMeb.map(r => r.cls).filter(Boolean))).sort()];
+                                dCls.innerHTML = opts.map(t => `<option value="${t}">${t}</option>`).join('');
+                                if (opts.includes(selCls)) dCls.value = selCls; else dCls.value = "Tümü";
+                            }
+
+                            if (dCls && dCls.value !== "Tümü") fMeb = fMeb.filter(r => r.cls === dCls.value);
+
+                            if (dLes) {
+                                const selLes = dLes.value;
+                                const opts = ["Tümü", ...Array.from(new Set(fMeb.map(r => r.lesson).filter(Boolean))).sort()];
+                                dLes.innerHTML = opts.map(t => `<option value="${t}">${t}</option>`).join('');
+                                if (opts.includes(selLes)) dLes.value = selLes; else dLes.value = "Tümü";
+                            }
+                        }
+
+                        function updateUnjumbleDropdowns() {
+                            let filtered = window.unjumbleRawData || [];
+
+                            const selPref = prefContainer ? prefContainer.value : "GamEdu Keşfet";
+                            if (selPref === "Benim Setlerim") {
+                                if (typeof currentUser !== 'undefined' && currentUser) {
+                                    filtered = filtered.filter(r => r.author === currentUser.uid);
+                                } else {
+                                    filtered = [];
+                                }
+                            } else {
+                                filtered = filtered.filter(r => r.isPublic === true);
+                            }
+
+                            if (dLvl && dLvl.value !== "Tümü") filtered = filtered.filter(r => r.level === dLvl.value);
+                            if (dCls && dCls.value !== "Tümü") filtered = filtered.filter(r => r.cls === dCls.value);
+                            if (dLes && dLes.value !== "Tümü") filtered = filtered.filter(r => r.lesson === dLes.value);
+
+                            const cbCont = document.getElementById('SelectedSets');
+                            if (cbCont) {
+                                cbCont.innerHTML = '';
+                                if (filtered.length === 0) {
+                                    cbCont.innerHTML = '<span style="color:#ef4444; font-size:0.9rem;">Seçili kriterlere uygun set bulunamadı.</span>';
+                                    if (btnStart) {
+                                        btnStart.disabled = true;
+                                        btnStart.textContent = 'Uygun Set Yok';
+                                        btnStart.style.opacity = '0.5';
+                                        btnStart.style.pointerEvents = 'none';
+                                    }
+                                } else {
+                                    filtered.forEach(s => {
+                                        const checkboxId = `UnjumbleSetsCheckbox_${s.id}`;
+                                        const optContainer = document.createElement('label');
+                                        optContainer.setAttribute('for', checkboxId);
+                                        optContainer.style.cssText = "display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-bottom:4px; font-weight:normal; font-size:0.9rem; cursor:pointer;";
+
+                                        const checkbox = document.createElement('input');
+                                        checkbox.type = 'checkbox';
+                                        checkbox.id = checkboxId;
+                                        checkbox.name = 'SelectedSets';
+                                        checkbox.value = s.id;
+                                        checkbox.checked = true; // Tüm setleri varsayılan olarak seç
+                                        checkbox.style.cssText = "width:18px; height:18px; cursor:pointer;";
+
+                                        optContainer.appendChild(checkbox);
+                                        optContainer.appendChild(document.createTextNode(s.title));
+                                        cbCont.appendChild(optContainer);
+                                    });
+                                    if (btnStart) {
+                                        btnStart.disabled = false;
+                                        btnStart.textContent = 'Oyunu Başlat';
+                                        btnStart.style.opacity = '1';
+                                        btnStart.style.pointerEvents = 'auto';
+                                    }
+                                }
+                            }
+                        }
+
+                        if (dLvl) dLvl.addEventListener('change', () => { updateMebFilters(); updateUnjumbleDropdowns(); });
+                        if (dCls) dCls.addEventListener('change', () => { updateMebFilters(); updateUnjumbleDropdowns(); });
+                        if (dLes) dLes.addEventListener('change', updateUnjumbleDropdowns);
+                        if (prefContainer) prefContainer.parentElement.addEventListener('click', () => { setTimeout(updateUnjumbleDropdowns, 50); });
+
+                        updateMebFilters();
+                        updateUnjumbleDropdowns();
+
+                    }, 200);
+
+                })
+                .catch(e => {
+                    showOzelAlert("Cümle verileri okunurken bağlantı sorunu oluştu.", "hata");
+                });
         }
     }
     else if (game.id === 'trivia') {
@@ -771,11 +1073,39 @@ function loadGameSetup(game, configSheet) {
 
                     setTimeout(() => {
                         const dynamicForm = document.getElementById('dynamicSetupForm');
+
+                        // Layout Grid Application
+                        if (dynamicForm) {
+                            dynamicForm.style.display = 'grid';
+                            dynamicForm.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                            dynamicForm.style.gap = '12px';
+                            dynamicForm.style.alignItems = 'start';
+
+                            const getParent = (id) => { const el = document.getElementById(id); return el ? el.closest('.form-group') : null; };
+                            const fMode = getParent('TriviaGameMode');
+                            const fSrce = getParent('TriviaSource');
+                            const fPref = getParent('SetPreference');
+                            const fLvl = getParent('GlobalLevelFilter');
+                            const fCls = getParent('GlobalClassFilter');
+                            const fLes = getParent('GlobalLessonFilter');
+                            const fSets = getParent('TriviaSetsCheckbox');
+
+                            if (fMode) { fMode.style.gridColumn = 'span 1'; dynamicForm.appendChild(fMode); }
+                            if (fSrce) { fSrce.style.gridColumn = 'span 1'; dynamicForm.appendChild(fSrce); }
+                            if (fPref) { fPref.style.gridColumn = 'span 1'; dynamicForm.appendChild(fPref); }
+
+                            if (fLvl) { fLvl.style.gridColumn = 'span 1'; dynamicForm.appendChild(fLvl); }
+                            if (fCls) { fCls.style.gridColumn = 'span 1'; dynamicForm.appendChild(fCls); }
+                            if (fLes) { fLes.style.gridColumn = 'span 1'; dynamicForm.appendChild(fLes); }
+
+                            if (fSets) { fSets.style.gridColumn = 'span 3'; dynamicForm.appendChild(fSets); }
+                        }
+
                         if (dynamicForm && !document.getElementById('openTriviaEditorBtn_main')) {
                             const btn = document.createElement('button');
                             btn.id = 'openTriviaEditorBtn_main';
                             btn.className = 'login-btn fade-in';
-                            btn.style = 'margin-bottom:15px; width:100%; background:var(--glass-bg); border: 2px dashed #8b5cf6; color:#a78bfa; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(139, 92, 246, 0.2);';
+                            btn.style = 'grid-column: 1 / -1; margin-bottom:15px; width:100%; background:var(--glass-bg); border: 2px dashed #8b5cf6; color:#a78bfa; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(139, 92, 246, 0.2);';
                             btn.innerHTML = '✨ Sıfırdan Yeni Karma Trivia Seti Oluştur (Editör)';
                             dynamicForm.prepend(btn);
 
@@ -886,7 +1216,7 @@ function loadGameSetup(game, configSheet) {
                     window.avatarrunRawData = rows;
 
                     const avatarrunConfig = [
-                        { SettingName: "AvatarRunGameMode", DisplayName: "Oyun Tarzı", Type: "toggle", OptionsSource: "Takım Modu (Quizlet Live),Bireysel Mod", DefaultValue: "Takım Modu (Quizlet Live)" },
+                        { SettingName: "AvatarRunGameMode", DisplayName: "Oyun Tarzı", Type: "toggle", OptionsSource: "Takım Modu ,Bireysel Mod", DefaultValue: "Takım Modu" },
                         { SettingName: "AvatarRunSource", DisplayName: "İçerik Kaynağı", Type: "toggle", OptionsSource: "Hazır Setler (Trivia/AvatarRun),Mevcut Soru/Kelime Havuzundan Üret", DefaultValue: "Hazır Setler (Trivia/AvatarRun)" },
                         { SettingName: "SetPreference", DisplayName: "Set Havuzu", Type: "dropdown", OptionsSource: "GamEdu Keşfet,Benim Setlerim", DefaultValue: "GamEdu Keşfet" },
                         { SettingName: "GlobalLevelFilter", DisplayName: "Kademe", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Tümü" },
@@ -899,11 +1229,38 @@ function loadGameSetup(game, configSheet) {
 
                     setTimeout(() => {
                         const dynamicForm = document.getElementById('dynamicSetupForm');
+
+                        if (dynamicForm) {
+                            dynamicForm.style.display = 'grid';
+                            dynamicForm.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                            dynamicForm.style.gap = '12px';
+                            dynamicForm.style.alignItems = 'start';
+
+                            const getParent = (id) => { const el = document.getElementById(id); return el ? el.closest('.form-group') : null; };
+                            const fMode = getParent('AvatarRunGameMode');
+                            const fSrce = getParent('AvatarRunSource');
+                            const fPref = getParent('SetPreference');
+                            const fLvl = getParent('GlobalLevelFilter');
+                            const fCls = getParent('GlobalClassFilter');
+                            const fLes = getParent('GlobalLessonFilter');
+                            const fSets = getParent('AvatarRunSetsCheckbox');
+
+                            if (fMode) { fMode.style.gridColumn = 'span 1'; dynamicForm.appendChild(fMode); }
+                            if (fSrce) { fSrce.style.gridColumn = 'span 1'; dynamicForm.appendChild(fSrce); }
+                            if (fPref) { fPref.style.gridColumn = 'span 1'; dynamicForm.appendChild(fPref); }
+
+                            if (fLvl) { fLvl.style.gridColumn = 'span 1'; dynamicForm.appendChild(fLvl); }
+                            if (fCls) { fCls.style.gridColumn = 'span 1'; dynamicForm.appendChild(fCls); }
+                            if (fLes) { fLes.style.gridColumn = 'span 1'; dynamicForm.appendChild(fLes); }
+
+                            if (fSets) { fSets.style.gridColumn = 'span 3'; dynamicForm.appendChild(fSets); }
+                        }
+
                         if (dynamicForm && !document.getElementById('openAvatarEditorBtn_main')) {
                             const btn = document.createElement('button');
                             btn.id = 'openAvatarEditorBtn_main';
                             btn.className = 'login-btn fade-in';
-                            btn.style = 'margin-bottom:15px; width:100%; background:var(--glass-bg); border: 2px dashed #f43f5e; color:#fda4af; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(244, 63, 94, 0.2);';
+                            btn.style = 'grid-column: 1 / -1; margin-bottom:15px; width:100%; background:var(--glass-bg); border: 2px dashed #f43f5e; color:#fda4af; font-weight:bold; border-radius:12px; padding:10px; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 15px rgba(244, 63, 94, 0.2);';
                             btn.innerHTML = '✨ Sıfırdan Yeni Karma Set Oluştur (Editör)';
                             dynamicForm.prepend(btn);
 
@@ -1179,429 +1536,429 @@ function loadGameSetup(game, configSheet) {
         }, 100);
     }
     else if (apiUrl && apiUrl.trim() !== '') {
-        fetch(`${apiUrl}?api=true&action=getGameConfig&sheetName=${encodeURIComponent(configSheet)}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data && Array.isArray(data) && !data.error) {
-                    if (game.id !== 'beecomb') { // BeeComb harici oyunlara zorunlu enjeksiyon
+        let configPromise = Promise.resolve([]);
 
-                        // Set Tercihi Toggle
-                        data.unshift({
-                            SettingName: "SetPreference",
-                            DisplayName: "Set Tercihi",
-                            Type: "toggle",
-                            OptionsSource: "GamEdu,Benim Setlerim",
-                            DefaultValue: "GamEdu"
-                        });
-                        // Kademe Statik
-                        data.splice(1, 0, {
-                            SettingName: "GlobalLevelFilter",
-                            DisplayName: "Kademe",
+        if (game.id === 'bang') {
+            configPromise = Promise.resolve([
+                { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
+                { SettingName: "WinningPoints", DisplayName: "Kazanma Puanı (Limit)", Type: "number", DefaultValue: 10, Min: 5, Max: 50 }
+            ]);
+        } else if (game.id === 'lingo') {
+            configPromise = Promise.resolve([]); // Lingo completely overwrites data
+        } else {
+            configPromise = fetch(`${apiUrl}?api=true&action=getGameConfig&sheetName=${encodeURIComponent(configSheet)}`).then(res => res.json());
+        }
+
+        configPromise.then(data => {
+            if (data && Array.isArray(data) && !data.error) {
+                if (game.id !== 'beecomb') { // BeeComb harici oyunlara zorunlu enjeksiyon
+
+                    // Set Tercihi Toggle
+                    data.unshift({
+                        SettingName: "SetPreference",
+                        DisplayName: "Set Tercihi",
+                        Type: "toggle",
+                        OptionsSource: "GamEdu,Benim Setlerim",
+                        DefaultValue: "GamEdu"
+                    });
+                    // Kademe Statik
+                    data.splice(1, 0, {
+                        SettingName: "GlobalLevelFilter",
+                        DisplayName: "Kademe",
+                        Type: "dropdown",
+                        OptionsSource: "Tümü,İlkokul,Ortaokul,Lise",
+                        DefaultValue: "Tümü"
+                    });
+
+                    if (game.id !== 'lingo') {
+                        // Bang ve QuickReveal için eski Sınıf alanlarını silip statik Dropdown ekle
+                        data = data.filter(s => s.SettingName !== 'ClassGrades' && s.SettingName !== 'Lessons');
+
+                        // Sınıf
+                        data.splice(2, 0, {
+                            SettingName: "GlobalClassFilter",
+                            DisplayName: "Sınıf",
                             Type: "dropdown",
-                            OptionsSource: "Tümü,İlkokul,Ortaokul,Lise",
+                            OptionsSource: "Tümü,1. Sınıf,2. Sınıf,3. Sınıf,4. Sınıf,5. Sınıf,6. Sınıf,7. Sınıf,8. Sınıf,9. Sınıf,10. Sınıf,11. Sınıf,12. Sınıf",
+                            DefaultValue: "Tümü"
+                        });
+                        // Ders
+                        data.splice(3, 0, {
+                            SettingName: "GlobalLessonFilter",
+                            DisplayName: "Ders",
+                            Type: "dropdown",
+                            OptionsSource: "Tümü,Türkçe,Türk Dili ve Edebiyatı,Matematik,Hayat Bilgisi,Fen Bilimleri,Sosyal Bilgiler,Tarih,T.C. İnkılap Tarihi,Coğrafya,Fizik,Kimya,Biyoloji,Felsefe,İngilizce,Din Kültürü",
                             DefaultValue: "Tümü"
                         });
 
-                        if (game.id !== 'lingo') {
-                            // Bang ve QuickReveal için eski Sınıf alanlarını silip statik Dropdown ekle
-                            data = data.filter(s => s.SettingName !== 'ClassGrades' && s.SettingName !== 'Lessons');
-
-                            // Sınıf
-                            data.splice(2, 0, {
-                                SettingName: "GlobalClassFilter",
-                                DisplayName: "Sınıf",
-                                Type: "dropdown",
-                                OptionsSource: "Tümü,1. Sınıf,2. Sınıf,3. Sınıf,4. Sınıf,5. Sınıf,6. Sınıf,7. Sınıf,8. Sınıf,9. Sınıf,10. Sınıf,11. Sınıf,12. Sınıf",
-                                DefaultValue: "Tümü"
-                            });
-                            // Ders
-                            data.splice(3, 0, {
-                                SettingName: "GlobalLessonFilter",
-                                DisplayName: "Ders",
-                                Type: "dropdown",
-                                OptionsSource: "Tümü,Türkçe,Türk Dili ve Edebiyatı,Matematik,Hayat Bilgisi,Fen Bilimleri,Sosyal Bilgiler,Tarih,T.C. İnkılap Tarihi,Coğrafya,Fizik,Kimya,Biyoloji,Felsefe,İngilizce,Din Kültürü",
-                                DefaultValue: "Tümü"
-                            });
-
-                            // Kart Gösterimi (Sadece Bang için)
-                            if (game.id === 'bang') {
-                                data.splice(4, 0, {
-                                    SettingName: "DisplayMode",
-                                    DisplayName: "Kart Gösterimi",
-                                    Type: "dropdown",
-                                    OptionsSource: "Kelime,Türkçe Anlam,İngilizce Anlam,Resim",
-                                    DefaultValue: "Kelime"
-                                });
-                            }
-
-                            // UnitStart/UnitEnd ve BbTopic temizliği
-                            data = data.filter(s => !['UnitStart', 'UnitEnd', 'DictUnitStart', 'DictUnitEnd'].includes(s.SettingName));
-
-                            // Oynanacak Setler Checkboksları
-                            data.splice(game.id === 'bang' ? 5 : 4, 0, {
-                                SettingName: "SelectedSets",
-                                DisplayName: "Oynanacak Setler",
-                                Type: "multiselect",
-                                OptionsSource: "Yükleniyor...",
-                                DefaultValue: ""
-                            });
-                        } else {
-                            data = [
-                                { SettingName: "SetPreference", DisplayName: "Set Tercihi", Type: "toggle", OptionsSource: "GamEdu,Benim Setlerim", DefaultValue: "GamEdu" },
-                                { SettingName: "LingoFlow", DisplayName: "Oyun Akışı", Type: "toggle", OptionsSource: "Sıralı,Karışık", DefaultValue: "Karışık" },
-                                { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
-                                { SettingName: "GlobalLevelFilter", DisplayName: "Kademe", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Ortaokul" },
-                                { SettingName: "GlobalLessonFilter", DisplayName: "Ders", Type: "dropdown", OptionsSource: "Tümü", DefaultValue: "Tümü" },
-                                { SettingName: "SelectedSets", DisplayName: "Oynanacak Setler", Type: "multiselect", OptionsSource: "Yükleniyor...", DefaultValue: "" },
-                                { SettingName: "ClassGrades", DisplayName: "Sınıflar", Type: "multiselect", OptionsSource: "1. Sınıf,2. Sınıf,3. Sınıf,4. Sınıf,5. Sınıf,6. Sınıf,7. Sınıf,8. Sınıf,9. Sınıf,10. Sınıf,11. Sınıf,12. Sınıf,Ortak", DefaultValue: "Ortak" },
-                                { SettingName: "WordLength4", DisplayName: "4 Harfli", Type: "number", DefaultValue: 3, Min: 0, Max: 20 },
-                                { SettingName: "WordLength5", DisplayName: "5 Harfli", Type: "number", DefaultValue: 3, Min: 0, Max: 20 },
-                                { SettingName: "WordLength6", DisplayName: "6 Harfli", Type: "number", DefaultValue: 3, Min: 0, Max: 20 },
-                                { SettingName: "Countdown", DisplayName: "Süre (Sn)", Type: "number", DefaultValue: 15, Min: 5, Max: 60 }
-                            ];
-                        }
-                    }
-
-                    // Overrides for fetched external configs before rendering
-                    data.forEach(s => {
-                        if (s.SettingName === 'NumGroups') s.DisplayName = 'Grup Sayısı';
-                        if (s.SettingName === 'WinningPoints') s.DisplayName = 'Puan';
-                    });
-                }
-                populateSetupForm(data);
-
-                setTimeout(() => {
-                    const setupFormEl = document.getElementById('dynamicSetupForm');
-                    if (setupFormEl) {
-                        const getParent = (id) => { const el = document.getElementById(id); return el ? el.closest('.form-group') : null; };
-
+                        // Kart Gösterimi (Sadece Bang için)
                         if (game.id === 'bang') {
-                            setupFormEl.style.display = 'grid';
-                            setupFormEl.style.gridTemplateColumns = 'repeat(4, 1fr)';
-                            setupFormEl.style.gap = '10px';
-                            setupFormEl.style.alignItems = 'start';
-
-                            const fPref = getParent('SetPreference');
-                            const fWin = getParent('WinningPoints');
-                            const fGrp = getParent('NumGroups');
-                            if (fPref) { fPref.style.gridColumn = 'span 2'; setupFormEl.appendChild(fPref); }
-                            if (fWin) { fWin.style.gridColumn = 'span 1'; setupFormEl.appendChild(fWin); }
-                            if (fGrp) { fGrp.style.gridColumn = 'span 1'; setupFormEl.appendChild(fGrp); }
-
-                            const fLvl = getParent('GlobalLevelFilter');
-                            const fCls = getParent('GlobalClassFilter');
-                            const fLes = getParent('GlobalLessonFilter');
-                            const fDisp = getParent('DisplayMode');
-                            if (fLvl) { fLvl.style.gridColumn = 'span 1'; setupFormEl.appendChild(fLvl); }
-                            if (fCls) { fCls.style.gridColumn = 'span 1'; setupFormEl.appendChild(fCls); }
-                            if (fLes) { fLes.style.gridColumn = 'span 1'; setupFormEl.appendChild(fLes); }
-                            if (fDisp) { fDisp.style.gridColumn = 'span 1'; setupFormEl.appendChild(fDisp); }
-
-                            const fSets = getParent('SelectedSets');
-                            if (fSets) { fSets.style.gridColumn = '1 / -1'; setupFormEl.appendChild(fSets); }
-
-                            // DisplayMode değişince Resim seçiliyse set listesini filtrele
-                            setTimeout(() => {
-                                const dispEl = document.getElementById('DisplayMode');
-                                if (dispEl) {
-                                    dispEl.addEventListener('change', () => {
-                                        if (typeof window.updateGlobalCheckboxSets === 'function') {
-                                            window.updateGlobalCheckboxSets();
-                                        }
-                                    });
-                                }
-                            }, 300);
-                        } else if (game.id === 'lingo') {
-                            setupFormEl.style.display = 'grid';
-                            setupFormEl.style.gridTemplateColumns = 'repeat(12, 1fr)';
-                            setupFormEl.style.gap = '8px';
-                            setupFormEl.style.alignItems = 'start';
-
-                            const fPref = getParent('SetPreference');
-                            const fFlow = getParent('LingoFlow');
-                            const fGrp = getParent('NumGroups');
-                            if (fPref) { fPref.style.gridColumn = 'span 4'; setupFormEl.appendChild(fPref); }
-                            if (fFlow) { fFlow.style.gridColumn = 'span 4'; setupFormEl.appendChild(fFlow); }
-                            if (fGrp) { fGrp.style.gridColumn = 'span 4'; setupFormEl.appendChild(fGrp); }
-
-                            const fLvl = getParent('GlobalLevelFilter');
-                            const fLes = getParent('GlobalLessonFilter');
-                            if (fLvl) { fLvl.style.gridColumn = 'span 6'; setupFormEl.appendChild(fLvl); }
-                            if (fLes) { fLes.style.gridColumn = 'span 6'; setupFormEl.appendChild(fLes); }
-
-                            const fClass = getParent('ClassGrades');
-                            if (fClass) {
-                                fClass.style.gridColumn = '1 / -1';
-                                const cbGroup = document.getElementById('ClassGrades');
-                                if (cbGroup) {
-                                    cbGroup.style.display = 'flex';
-                                    cbGroup.style.flexWrap = 'wrap';
-                                    cbGroup.style.gap = '15px';
-                                }
-                                setupFormEl.appendChild(fClass);
-                            }
-
-                            const fW4 = getParent('WordLength4');
-                            const fW5 = getParent('WordLength5');
-                            const fW6 = getParent('WordLength6');
-                            const fTime = getParent('Countdown');
-
-                            // SelectedSets — tam satır genişliği
-                            const fSets = getParent('SelectedSets');
-                            if (fSets) {
-                                fSets.style.gridColumn = '1 / -1';
-                                setupFormEl.appendChild(fSets);
-                            }
-
-                            if (fW4) { fW4.style.gridColumn = 'span 3'; setupFormEl.appendChild(fW4); }
-                            if (fW5) { fW5.style.gridColumn = 'span 3'; setupFormEl.appendChild(fW5); }
-                            if (fW6) { fW6.style.gridColumn = 'span 3'; setupFormEl.appendChild(fW6); }
-                            if (fTime) { fTime.style.gridColumn = 'span 3'; setupFormEl.appendChild(fTime); }
-
-                        } else if (game.id === 'quickreveal') {
-                            // QuickReveal: block düzen — prepend edilen buton grid'i bozmasın
-                            setupFormEl.style.display = 'block';
-                            setupFormEl.style.gridTemplateColumns = '';
-                            setupFormEl.style.gap = '';
-
-                        } else if (game.id === 'baamboo') {
-                            // BaamBoo: 2 sütunlu grid
-                            setupFormEl.style.display = 'grid';
-                            setupFormEl.style.gridTemplateColumns = 'repeat(2, 1fr)';
-                            setupFormEl.style.gap = '12px';
-                            setupFormEl.style.alignItems = 'start';
-                            const fPref = getParent('SetPreference');
-                            const fGrp = getParent('NumGroups');
-                            const fTime = getParent('BbCountdown');
-                            const fType = getParent('BbIsMultipleChoice');
-                            const fLvl = getParent('BbLevel');
-                            const fCls = getParent('BbClass');
-                            const fLes = getParent('BbLesson');
-                            const fSets = getParent('BbSetsCheckbox');
-                            if (fPref) { fPref.style.gridColumn = 'span 2'; setupFormEl.appendChild(fPref); }
-                            if (fGrp) { fGrp.style.gridColumn = 'span 1'; setupFormEl.appendChild(fGrp); }
-                            if (fTime) { fTime.style.gridColumn = 'span 1'; setupFormEl.appendChild(fTime); }
-                            if (fType) { fType.style.gridColumn = 'span 2'; setupFormEl.appendChild(fType); }
-                            if (fLvl) { fLvl.style.gridColumn = 'span 1'; setupFormEl.appendChild(fLvl); }
-                            if (fCls) { fCls.style.gridColumn = 'span 1'; setupFormEl.appendChild(fCls); }
-                            if (fLes) { fLes.style.gridColumn = 'span 2'; setupFormEl.appendChild(fLes); }
-                            if (fSets) { fSets.style.gridColumn = 'span 2'; setupFormEl.appendChild(fSets); }
-                        }
-                    }
-                }, 100);
-
-                // --- GLOBAL DYNAMIC SET CHECKBOXES (API bazlı oyunlar için, lingo dahil) ---
-                if (game.id !== 'beecomb') {
-                    if (typeof database !== 'undefined') {
-                        database.ref('MasterPool').once('value').then(snap => {
-                            let sets = [];
-                            snap.forEach(child => {
-                                let s = child.val();
-                                // Resimli set kontrolü: Data içinde en az bir ImageUrl dolu kayıt varsa
-                                const hasImages = s.Data && Array.isArray(s.Data) && s.Data.some(item => item && item.ImgURL && item.ImgURL.trim() !== '');
-                                sets.push({
-                                    id: child.key,
-                                    title: s.Title || "İsimsiz Set",
-                                    type: s.Type,
-                                    level: s.GlobalLevel || (s.Data && s.Data[0] ? s.Data[0].Level : "Tümü"),
-                                    cls: s.GlobalClass || (s.Data && s.Data[0] ? s.Data[0].ClassGrade : "Tümü"),
-                                    lesson: s.GlobalLesson || (s.Data && s.Data[0] ? s.Data[0].Lesson : "Tümü"),
-                                    author: s.Author_ID,
-                                    isPublic: s.IsPublic !== false,
-                                    hasImages: hasImages
-                                });
+                            data.splice(4, 0, {
+                                SettingName: "DisplayMode",
+                                DisplayName: "Kart Gösterimi",
+                                Type: "dropdown",
+                                OptionsSource: "Kelime,Türkçe Anlam,İngilizce Anlam,Resim",
+                                DefaultValue: "Kelime"
                             });
-                            window.globalMasterSets = sets;
-                            if (typeof window.updateGlobalCheckboxSets === 'function') {
-                                window.updateGlobalCheckboxSets();
-                            }
+                        }
+
+                        // UnitStart/UnitEnd ve BbTopic temizliği
+                        data = data.filter(s => !['UnitStart', 'UnitEnd', 'DictUnitStart', 'DictUnitEnd'].includes(s.SettingName));
+
+                        // Oynanacak Setler Checkboksları
+                        data.splice(game.id === 'bang' ? 5 : 4, 0, {
+                            SettingName: "SelectedSets",
+                            DisplayName: "Oynanacak Setler",
+                            Type: "multiselect",
+                            OptionsSource: "Yükleniyor...",
+                            DefaultValue: ""
                         });
+                    } else {
+                        data = [
+                            { SettingName: "SetPreference", DisplayName: "Set Tercihi", Type: "toggle", OptionsSource: "GamEdu,Benim Setlerim", DefaultValue: "GamEdu" },
+                            { SettingName: "LingoFlow", DisplayName: "Oyun Akışı", Type: "toggle", OptionsSource: "Sıralı,Karışık", DefaultValue: "Karışık" },
+                            { SettingName: "NumGroups", DisplayName: "Grup Sayısı", Type: "number", DefaultValue: 4, Min: 2, Max: 6 },
+                            { SettingName: "GlobalLevelFilter", DisplayName: "Kademe", Type: "dropdown", OptionsSource: "Tümü,İlkokul,Ortaokul,Lise", DefaultValue: "Ortaokul" },
+                            { SettingName: "GlobalLessonFilter", DisplayName: "Ders", Type: "dropdown", OptionsSource: "Tümü", DefaultValue: "Tümü" },
+                            { SettingName: "SelectedSets", DisplayName: "Oynanacak Setler", Type: "multiselect", OptionsSource: "Yükleniyor...", DefaultValue: "" },
+                            { SettingName: "GlobalClassFilter", DisplayName: "Sınıf", Type: "dropdown", OptionsSource: "Tümü,1. Sınıf,2. Sınıf,3. Sınıf,4. Sınıf,5. Sınıf,6. Sınıf,7. Sınıf,8. Sınıf,9. Sınıf,10. Sınıf,11. Sınıf,12. Sınıf,Ortak", DefaultValue: "Tümü" },
+                            { SettingName: "WordLength4", DisplayName: "4 Harfli", Type: "number", DefaultValue: 3, Min: 0, Max: 20 },
+                            { SettingName: "WordLength5", DisplayName: "5 Harfli", Type: "number", DefaultValue: 3, Min: 0, Max: 20 },
+                            { SettingName: "WordLength6", DisplayName: "6 Harfli", Type: "number", DefaultValue: 3, Min: 0, Max: 20 },
+                            { SettingName: "Countdown", DisplayName: "Süre (Sn)", Type: "number", DefaultValue: 15, Min: 5, Max: 60 }
+                        ];
+                    }
+                }
 
-                        window.updateGlobalCheckboxSets = function () {
-                            const cbContainer = document.getElementById('SelectedSets');
-                            if (!cbContainer || !window.globalMasterSets) return;
+                // Overrides for fetched external configs before rendering
+                data.forEach(s => {
+                    if (s.SettingName === 'NumGroups') s.DisplayName = 'Grup Sayısı';
+                    if (s.SettingName === 'WinningPoints') s.DisplayName = 'Puan';
+                });
+            }
+            populateSetupForm(data);
 
-                            const prefEl = document.getElementById('SetPreference') || { value: "GamEdu" };
-                            const lvlEl = document.getElementById('GlobalLevelFilter') || { value: "Tümü" };
-                            const clsEl = document.getElementById('GlobalClassFilter') || { value: "Tümü" };
-                            const lesEl = document.getElementById('GlobalLessonFilter') || { value: "Tümü" };
-                            const startBtn = document.getElementById('startGameBtn');
+            setTimeout(() => {
+                const setupFormEl = document.getElementById('dynamicSetupForm');
+                if (setupFormEl) {
+                    const getParent = (id) => { const el = document.getElementById(id); return el ? el.closest('.form-group') : null; };
 
-                            let filtered = window.globalMasterSets;
-                            filtered = filtered.filter(s => s.type === 'wordspool');
+                    if (game.id === 'bang') {
+                        setupFormEl.style.display = 'grid';
+                        setupFormEl.style.gridTemplateColumns = 'repeat(4, 1fr)';
+                        setupFormEl.style.gap = '10px';
+                        setupFormEl.style.alignItems = 'start';
 
-                            if (prefEl.value === 'Benim Setlerim') {
-                                filtered = filtered.filter(s => currentUser && s.author === currentUser.uid);
-                            } else {
-                                filtered = filtered.filter(s => s.isPublic);
-                            }
+                        const fPref = getParent('SetPreference');
+                        const fWin = getParent('WinningPoints');
+                        const fGrp = getParent('NumGroups');
+                        if (fPref) { fPref.style.gridColumn = 'span 2'; setupFormEl.appendChild(fPref); }
+                        if (fWin) { fWin.style.gridColumn = 'span 1'; setupFormEl.appendChild(fWin); }
+                        if (fGrp) { fGrp.style.gridColumn = 'span 1'; setupFormEl.appendChild(fGrp); }
 
-                            if (lvlEl.value !== "Tümü") filtered = filtered.filter(s => s.level === lvlEl.value);
-                            if (clsEl.value !== "Tümü") filtered = filtered.filter(s => s.cls === clsEl.value);
-                            if (lesEl.value !== "Tümü") filtered = filtered.filter(s => s.lesson === lesEl.value);
+                        const fLvl = getParent('GlobalLevelFilter');
+                        const fCls = getParent('GlobalClassFilter');
+                        const fLes = getParent('GlobalLessonFilter');
+                        const fDisp = getParent('DisplayMode');
+                        if (fLvl) { fLvl.style.gridColumn = 'span 1'; setupFormEl.appendChild(fLvl); }
+                        if (fCls) { fCls.style.gridColumn = 'span 1'; setupFormEl.appendChild(fCls); }
+                        if (fLes) { fLes.style.gridColumn = 'span 1'; setupFormEl.appendChild(fLes); }
+                        if (fDisp) { fDisp.style.gridColumn = 'span 1'; setupFormEl.appendChild(fDisp); }
 
-                            // DisplayMode = Resim ise yalnızca resimli setleri göster
-                            const dispModeEl = document.getElementById('DisplayMode');
-                            if (dispModeEl && dispModeEl.value === 'Resim') {
-                                filtered = filtered.filter(s => s.hasImages === true);
-                            }
+                        const fSets = getParent('SelectedSets');
+                        if (fSets) { fSets.style.gridColumn = '1 / -1'; setupFormEl.appendChild(fSets); }
 
-                            cbContainer.innerHTML = '';
-                            if (filtered.length === 0) {
-                                cbContainer.innerHTML = '<span style="color:#ef4444; font-size:0.9rem;">Seçili kriterlere uygun set bulunamadı.</span>';
-                                if (startBtn) {
-                                    startBtn.disabled = true;
-                                    startBtn.textContent = 'Uygun Set Yok';
-                                    startBtn.style.opacity = '0.5';
-                                    startBtn.style.pointerEvents = 'none';
-                                }
-                            } else {
-                                filtered.forEach(s => {
-                                    const checkboxId = `SelectedSets_${s.id}`;
-                                    const optContainer = document.createElement('label');
-                                    optContainer.setAttribute('for', checkboxId);
-                                    optContainer.style.cssText = "display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-bottom:4px; font-weight:normal; font-size:0.9rem; cursor:pointer;";
-
-                                    const checkbox = document.createElement('input');
-                                    checkbox.type = 'checkbox';
-                                    checkbox.id = checkboxId;
-                                    checkbox.name = 'SelectedSets';
-                                    checkbox.value = s.id;
-                                    checkbox.checked = true; // Auto-check by default
-                                    checkbox.style.cssText = "width:18px; height:18px; cursor:pointer;";
-
-                                    optContainer.appendChild(checkbox);
-                                    optContainer.appendChild(document.createTextNode(s.title));
-                                    cbContainer.appendChild(optContainer);
+                        // DisplayMode değişince Resim seçiliyse set listesini filtrele
+                        setTimeout(() => {
+                            const dispEl = document.getElementById('DisplayMode');
+                            if (dispEl) {
+                                dispEl.addEventListener('change', () => {
+                                    if (typeof window.updateGlobalCheckboxSets === 'function') {
+                                        window.updateGlobalCheckboxSets();
+                                    }
                                 });
-                                if (startBtn) {
-                                    startBtn.disabled = false;
-                                    startBtn.textContent = 'Oyunu Başlat';
-                                    startBtn.style.opacity = '1';
-                                    startBtn.style.pointerEvents = 'auto';
-                                }
                             }
+                        }, 300);
+                    } else if (game.id === 'lingo') {
+                        setupFormEl.style.display = 'grid';
+                        setupFormEl.style.gridTemplateColumns = 'repeat(12, 1fr)';
+                        setupFormEl.style.gap = '8px';
+                        setupFormEl.style.alignItems = 'start';
+
+                        const fPref = getParent('SetPreference');
+                        const fFlow = getParent('LingoFlow');
+                        const fGrp = getParent('NumGroups');
+                        if (fPref) { fPref.style.gridColumn = 'span 4'; setupFormEl.appendChild(fPref); }
+                        if (fFlow) { fFlow.style.gridColumn = 'span 4'; setupFormEl.appendChild(fFlow); }
+                        if (fGrp) { fGrp.style.gridColumn = 'span 4'; setupFormEl.appendChild(fGrp); }
+
+                        const fLvl = getParent('GlobalLevelFilter');
+                        const fClass = getParent('GlobalClassFilter');
+                        const fLes = getParent('GlobalLessonFilter');
+
+                        if (fLvl) { fLvl.style.gridColumn = 'span 3'; setupFormEl.appendChild(fLvl); }
+                        if (fClass) { fClass.style.gridColumn = 'span 3'; setupFormEl.appendChild(fClass); }
+                        if (fLes) { fLes.style.gridColumn = 'span 6'; setupFormEl.appendChild(fLes); }
+
+                        const fW4 = getParent('WordLength4');
+                        const fW5 = getParent('WordLength5');
+                        const fW6 = getParent('WordLength6');
+                        const fTime = getParent('Countdown');
+
+                        // SelectedSets — tam satır genişliği
+                        const fSets = getParent('SelectedSets');
+                        if (fSets) {
+                            fSets.style.gridColumn = '1 / -1';
+                            setupFormEl.appendChild(fSets);
+                        }
+
+                        if (fW4) { fW4.style.gridColumn = 'span 3'; setupFormEl.appendChild(fW4); }
+                        if (fW5) { fW5.style.gridColumn = 'span 3'; setupFormEl.appendChild(fW5); }
+                        if (fW6) { fW6.style.gridColumn = 'span 3'; setupFormEl.appendChild(fW6); }
+                        if (fTime) { fTime.style.gridColumn = 'span 3'; setupFormEl.appendChild(fTime); }
+
+                    } else if (game.id === 'quickreveal') {
+                        setupFormEl.style.display = 'grid';
+                        setupFormEl.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                        setupFormEl.style.gap = '12px';
+                        setupFormEl.style.alignItems = 'start';
+                        const fGrp = getParent('NumGroups');
+                        const fCat = getParent('QrCategory');
+                        const fSub = getParent('QrSubCategory');
+                        const fMath = getParent('QrMathOps');
+                        const fIrr = getParent('QrIrregularOps');
+                        const fCust = getParent('QrCustomData');
+                        const fMin = getParent('QrMin');
+                        const fMax = getParent('QrMax');
+                        const fTime = getParent('QrTimeType');
+
+                        // Prepended button fix
+                        const btn = document.getElementById('qrCustomSetModeBtn');
+                        if (btn) btn.style.gridColumn = '1 / -1';
+
+                        if (fGrp) { fGrp.style.gridColumn = 'span 1'; setupFormEl.appendChild(fGrp); }
+                        if (fCat) { fCat.style.gridColumn = 'span 1'; setupFormEl.appendChild(fCat); }
+                        if (fSub) { fSub.style.gridColumn = 'span 2'; setupFormEl.appendChild(fSub); }
+                        if (fMath) { fMath.style.gridColumn = 'span 2'; setupFormEl.appendChild(fMath); }
+                        if (fIrr) { fIrr.style.gridColumn = 'span 2'; setupFormEl.appendChild(fIrr); }
+                        if (fCust) { fCust.style.gridColumn = '1 / -1'; setupFormEl.appendChild(fCust); }
+                        if (fMin) { fMin.style.gridColumn = 'span 1'; setupFormEl.appendChild(fMin); }
+                        if (fMax) { fMax.style.gridColumn = 'span 1'; setupFormEl.appendChild(fMax); }
+                        if (fTime) { fTime.style.gridColumn = 'span 2'; setupFormEl.appendChild(fTime); }
+
+                    } else if (game.id === 'baamboo') {
+                        // BaamBoo: 2 sütunlu grid
+                        setupFormEl.style.display = 'grid';
+                        setupFormEl.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                        setupFormEl.style.gap = '12px';
+                        setupFormEl.style.alignItems = 'start';
+                        const fPref = getParent('SetPreference');
+                        const fGrp = getParent('NumGroups');
+                        const fTime = getParent('BbCountdown');
+                        const fType = getParent('BbIsMultipleChoice');
+                        const fLvl = getParent('BbLevel');
+                        const fCls = getParent('BbClass');
+                        const fLes = getParent('BbLesson');
+                        const fSets = getParent('BbSetsCheckbox');
+                        if (fPref) { fPref.style.gridColumn = 'span 2'; setupFormEl.appendChild(fPref); }
+                        if (fGrp) { fGrp.style.gridColumn = 'span 1'; setupFormEl.appendChild(fGrp); }
+                        if (fTime) { fTime.style.gridColumn = 'span 1'; setupFormEl.appendChild(fTime); }
+                        if (fType) { fType.style.gridColumn = 'span 2'; setupFormEl.appendChild(fType); }
+                        if (fLvl) { fLvl.style.gridColumn = 'span 1'; setupFormEl.appendChild(fLvl); }
+                        if (fCls) { fCls.style.gridColumn = 'span 1'; setupFormEl.appendChild(fCls); }
+                        if (fLes) { fLes.style.gridColumn = 'span 2'; setupFormEl.appendChild(fLes); }
+                        if (fSets) { fSets.style.gridColumn = '1 / -1'; setupFormEl.appendChild(fSets); }
+                    }
+                }
+            }, 100);
+
+            // --- GLOBAL DYNAMIC SET CHECKBOXES (API bazlı oyunlar için, lingo dahil) ---
+            if (game.id !== 'beecomb') {
+                if (typeof database !== 'undefined') {
+                    database.ref('MasterPool').once('value').then(snap => {
+                        let sets = [];
+                        snap.forEach(child => {
+                            let s = child.val();
+                            // Resimli set kontrolü: Data içinde en az bir ImageUrl dolu kayıt varsa
+                            const hasImages = s.Data && Array.isArray(s.Data) && s.Data.some(item => item && item.ImgURL && item.ImgURL.trim() !== '');
+                            sets.push({
+                                id: child.key,
+                                title: s.Title || "İsimsiz Set",
+                                type: s.Type,
+                                level: s.GlobalLevel || (s.Data && s.Data[0] ? s.Data[0].Level : "Tümü"),
+                                cls: s.GlobalClass || (s.Data && s.Data[0] ? s.Data[0].ClassGrade : "Tümü"),
+                                lesson: s.GlobalLesson || (s.Data && s.Data[0] ? s.Data[0].Lesson : "Tümü"),
+                                author: s.Author_ID,
+                                isPublic: s.IsPublic !== false,
+                                hasImages: hasImages
+                            });
+                        });
+                        window.globalMasterSets = sets;
+                        if (typeof window.updateGlobalCheckboxSets === 'function') {
+                            window.updateGlobalCheckboxSets();
+                        }
+                    });
+
+                    window.updateGlobalCheckboxSets = function () {
+                        const cbContainer = document.getElementById('SelectedSets');
+                        if (!cbContainer || !window.globalMasterSets) return;
+
+                        const prefEl = document.getElementById('SetPreference') || { value: "GamEdu" };
+                        const lvlEl = document.getElementById('GlobalLevelFilter') || { value: "Tümü" };
+                        const clsEl = document.getElementById('GlobalClassFilter') || { value: "Tümü" };
+                        const lesEl = document.getElementById('GlobalLessonFilter') || { value: "Tümü" };
+                        const startBtn = document.getElementById('startGameBtn');
+
+                        let filtered = window.globalMasterSets;
+                        filtered = filtered.filter(s => s.type === 'wordspool');
+
+                        if (prefEl.value === 'Benim Setlerim') {
+                            filtered = filtered.filter(s => currentUser && s.author === currentUser.uid);
+                        } else {
+                            filtered = filtered.filter(s => s.isPublic);
+                        }
+
+                        if (lvlEl.value !== "Tümü") filtered = filtered.filter(s => s.level === lvlEl.value);
+                        if (clsEl.value !== "Tümü") filtered = filtered.filter(s => s.cls === clsEl.value);
+                        if (lesEl.value !== "Tümü") filtered = filtered.filter(s => s.lesson === lesEl.value);
+
+                        // DisplayMode = Resim ise yalnızca resimli setleri göster
+                        const dispModeEl = document.getElementById('DisplayMode');
+                        if (dispModeEl && dispModeEl.value === 'Resim') {
+                            filtered = filtered.filter(s => s.hasImages === true);
+                        }
+
+                        cbContainer.innerHTML = '';
+                        if (filtered.length === 0) {
+                            cbContainer.innerHTML = '<span style="color:#ef4444; font-size:0.9rem;">Seçili kriterlere uygun set bulunamadı.</span>';
+                            if (startBtn) {
+                                startBtn.disabled = true;
+                                startBtn.textContent = 'Uygun Set Yok';
+                                startBtn.style.opacity = '0.5';
+                                startBtn.style.pointerEvents = 'none';
+                            }
+                        } else {
+                            filtered.forEach(s => {
+                                const checkboxId = `SelectedSets_${s.id}`;
+                                const optContainer = document.createElement('label');
+                                optContainer.setAttribute('for', checkboxId);
+                                optContainer.style.cssText = "display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-bottom:4px; font-weight:normal; font-size:0.9rem; cursor:pointer;";
+
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.id = checkboxId;
+                                checkbox.name = 'SelectedSets';
+                                checkbox.value = s.id;
+                                checkbox.checked = true; // Auto-check by default
+                                checkbox.style.cssText = "width:18px; height:18px; cursor:pointer;";
+
+                                optContainer.appendChild(checkbox);
+                                optContainer.appendChild(document.createTextNode(s.title));
+                                cbContainer.appendChild(optContainer);
+                            });
+                            if (startBtn) {
+                                startBtn.disabled = false;
+                                startBtn.textContent = 'Oyunu Başlat';
+                                startBtn.style.opacity = '1';
+                                startBtn.style.pointerEvents = 'auto';
+                            }
+                        }
+                    };
+
+                    setTimeout(() => {
+                        const prefCont = document.getElementById('SetPreference') ? document.getElementById('SetPreference').parentElement : null;
+                        if (prefCont) prefCont.addEventListener('click', () => setTimeout(window.updateGlobalCheckboxSets, 50));
+
+                        const l = document.getElementById('GlobalLevelFilter');
+                        const c = document.getElementById('GlobalClassFilter');
+                        const less = document.getElementById('GlobalLessonFilter');
+                        if (l) l.addEventListener('change', window.updateGlobalCheckboxSets);
+                        if (c) c.addEventListener('change', window.updateGlobalCheckboxSets);
+                        if (less) less.addEventListener('change', window.updateGlobalCheckboxSets);
+                    }, 500);
+                }
+            }
+
+
+            // MEB Sistemine Göre Kademe Değiştikçe Sınıf ve Dersleri Filtrele
+            if (game.id !== 'beecomb') {
+                setTimeout(() => {
+                    const levelEl = document.getElementById('GlobalLevelFilter');
+                    const classEl = document.getElementById('GlobalClassFilter');
+                    const lessonEl = document.getElementById('GlobalLessonFilter');
+
+                    if (levelEl && lessonEl) {
+                        const updateFilters = () => {
+                            const val = levelEl.value;
+                            let classOpts = ["Tümü"];
+
+                            if (val === "İlkokul") {
+                                classOpts.push("1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf", "Ortak");
+                            } else if (val === "Ortaokul") {
+                                classOpts.push("5. Sınıf", "6. Sınıf", "7. Sınıf", "8. Sınıf", "Ortak");
+                            } else if (val === "Lise") {
+                                classOpts.push("9. Sınıf", "10. Sınıf", "11. Sınıf", "12. Sınıf", "Ortak");
+                            } else {
+                                classOpts.push("1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf", "5. Sınıf", "6. Sınıf", "7. Sınıf", "8. Sınıf", "9. Sınıf", "10. Sınıf", "11. Sınıf", "12. Sınıf", "Ortak");
+                            }
+
+                            if (classEl) {
+                                const prevClass = classEl.value;
+                                classEl.innerHTML = classOpts.map(o => `<option value="${o}">${o}</option>`).join('');
+                                if (classOpts.includes(prevClass)) classEl.value = prevClass;
+                            }
+
+
+
+                            // === DİNAMİK DERS FİLTRESİ: Firebase'den unique GlobalLesson çek ===
+                            lessonEl.innerHTML = '<option value="Tümü">⏳ Yükleniyor...</option>';
+                            const prevLesson = lessonEl.dataset.prevLesson || "Tümü";
+
+                            let lessonQuery;
+                            if (!val || val === "Tümü") {
+                                lessonQuery = database.ref('MasterPool');
+                            } else {
+                                lessonQuery = database.ref('MasterPool').orderByChild('GlobalLevel').equalTo(val);
+                            }
+
+                            lessonQuery.once('value').then(snapshot => {
+                                const lessonSet = new Set();
+                                snapshot.forEach(child => {
+                                    const lesson = child.val().GlobalLesson;
+                                    if (lesson && lesson.trim() !== '') lessonSet.add(lesson.trim());
+                                });
+
+                                // Sabit başlangıç: Tümü, Ortak, Genel — ardından alfabetik sıra
+                                const pinnedFirst = ["Tümü", "Ortak", "Genel"].filter(p => lessonSet.has(p) || p === "Tümü");
+                                const rest = Array.from(lessonSet)
+                                    .filter(l => !["Tümü", "Ortak", "Genel"].includes(l))
+                                    .sort((a, b) => a.localeCompare(b, 'tr'));
+                                const lessonOpts = [...pinnedFirst, ...rest];
+
+                                lessonEl.innerHTML = lessonOpts.map(o => `<option value="${o}">${o}</option>`).join('');
+
+                                // Önceki seçimi koru
+                                if (lessonOpts.includes(prevLesson)) lessonEl.value = prevLesson;
+
+                                if (window.updateGlobalCheckboxSets) window.updateGlobalCheckboxSets();
+                            }).catch(() => {
+                                lessonEl.innerHTML = '<option value="Tümü">Tümü</option>';
+                                if (window.updateGlobalCheckboxSets) window.updateGlobalCheckboxSets();
+                            });
                         };
 
-                        setTimeout(() => {
-                            const prefCont = document.getElementById('SetPreference') ? document.getElementById('SetPreference').parentElement : null;
-                            if (prefCont) prefCont.addEventListener('click', () => setTimeout(window.updateGlobalCheckboxSets, 50));
+                        // Ders seçimi değişince önceki değeri sakla
+                        lessonEl.addEventListener('change', () => {
+                            lessonEl.dataset.prevLesson = lessonEl.value;
+                        });
 
-                            const l = document.getElementById('GlobalLevelFilter');
-                            const c = document.getElementById('GlobalClassFilter');
-                            const less = document.getElementById('GlobalLessonFilter');
-                            if (l) l.addEventListener('change', window.updateGlobalCheckboxSets);
-                            if (c) c.addEventListener('change', window.updateGlobalCheckboxSets);
-                            if (less) less.addEventListener('change', window.updateGlobalCheckboxSets);
-                        }, 500);
+                        levelEl.addEventListener('change', updateFilters);
+                        // İlk kurulum anında çalıştır
+                        updateFilters();
                     }
-                }
-
-
-                // MEB Sistemine Göre Kademe Değiştikçe Sınıf ve Dersleri Filtrele
-                if (game.id !== 'beecomb') {
-                    setTimeout(() => {
-                        const levelEl = document.getElementById('GlobalLevelFilter');
-                        const classEl = document.getElementById('GlobalClassFilter');
-                        const lessonEl = document.getElementById('GlobalLessonFilter');
-
-                        if (levelEl && lessonEl) {
-                            const updateFilters = () => {
-                                const val = levelEl.value;
-                                let classOpts = ["Tümü"];
-
-                                if (val === "İlkokul") {
-                                    classOpts.push("1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf", "Ortak");
-                                } else if (val === "Ortaokul") {
-                                    classOpts.push("5. Sınıf", "6. Sınıf", "7. Sınıf", "8. Sınıf", "Ortak");
-                                } else if (val === "Lise") {
-                                    classOpts.push("9. Sınıf", "10. Sınıf", "11. Sınıf", "12. Sınıf", "Ortak");
-                                } else {
-                                    classOpts.push("1. Sınıf", "2. Sınıf", "3. Sınıf", "4. Sınıf", "5. Sınıf", "6. Sınıf", "7. Sınıf", "8. Sınıf", "9. Sınıf", "10. Sınıf", "11. Sınıf", "12. Sınıf", "Ortak");
-                                }
-
-                                if (classEl) {
-                                    const prevClass = classEl.value;
-                                    classEl.innerHTML = classOpts.map(o => `<option value="${o}">${o}</option>`).join('');
-                                    if (classOpts.includes(prevClass)) classEl.value = prevClass;
-                                }
-
-                                // LİNGO DİNAMİK SINIF (CLASSGRADES) YAPISI
-                                if (game.id === 'lingo') {
-                                    const lingoClassContainer = document.getElementById('ClassGrades');
-                                    if (lingoClassContainer) {
-                                        lingoClassContainer.innerHTML = '';
-                                        let checkboxOpts = classOpts.filter(c => c !== "Tümü");
-                                        if (!checkboxOpts.includes("Ortak")) checkboxOpts.push("Ortak");
-
-                                        checkboxOpts.forEach(opt => {
-                                            const cbId = `ClassGrades_${opt.replace(/\s+/g, '')}`;
-                                            const label = document.createElement('label');
-                                            label.setAttribute('for', cbId);
-                                            label.style.cssText = "display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:4px; font-size:0.9rem; cursor:pointer;";
-                                            const cb = document.createElement('input');
-                                            cb.type = 'checkbox';
-                                            cb.id = cbId;
-                                            cb.name = 'ClassGrades';
-                                            cb.value = opt;
-                                            if (opt === "Ortak") cb.checked = true;
-
-                                            label.appendChild(cb);
-                                            label.appendChild(document.createTextNode(opt));
-                                            lingoClassContainer.appendChild(label);
-                                        });
-                                    }
-                                }
-
-                                // === DİNAMİK DERS FİLTRESİ: Firebase'den unique GlobalLesson çek ===
-                                lessonEl.innerHTML = '<option value="Tümü">⏳ Yükleniyor...</option>';
-                                const prevLesson = lessonEl.dataset.prevLesson || "Tümü";
-
-                                let lessonQuery;
-                                if (!val || val === "Tümü") {
-                                    lessonQuery = database.ref('MasterPool');
-                                } else {
-                                    lessonQuery = database.ref('MasterPool').orderByChild('GlobalLevel').equalTo(val);
-                                }
-
-                                lessonQuery.once('value').then(snapshot => {
-                                    const lessonSet = new Set();
-                                    snapshot.forEach(child => {
-                                        const lesson = child.val().GlobalLesson;
-                                        if (lesson && lesson.trim() !== '') lessonSet.add(lesson.trim());
-                                    });
-
-                                    // Sabit başlangıç: Tümü, Ortak, Genel — ardından alfabetik sıra
-                                    const pinnedFirst = ["Tümü", "Ortak", "Genel"].filter(p => lessonSet.has(p) || p === "Tümü");
-                                    const rest = Array.from(lessonSet)
-                                        .filter(l => !["Tümü", "Ortak", "Genel"].includes(l))
-                                        .sort((a, b) => a.localeCompare(b, 'tr'));
-                                    const lessonOpts = [...pinnedFirst, ...rest];
-
-                                    lessonEl.innerHTML = lessonOpts.map(o => `<option value="${o}">${o}</option>`).join('');
-
-                                    // Önceki seçimi koru
-                                    if (lessonOpts.includes(prevLesson)) lessonEl.value = prevLesson;
-
-                                    if (window.updateGlobalCheckboxSets) window.updateGlobalCheckboxSets();
-                                }).catch(() => {
-                                    lessonEl.innerHTML = '<option value="Tümü">Tümü</option>';
-                                    if (window.updateGlobalCheckboxSets) window.updateGlobalCheckboxSets();
-                                });
-                            };
-
-                            // Ders seçimi değişince önceki değeri sakla
-                            lessonEl.addEventListener('change', () => {
-                                lessonEl.dataset.prevLesson = lessonEl.value;
-                            });
-
-                            levelEl.addEventListener('change', updateFilters);
-                            // İlk kurulum anında çalıştır
-                            updateFilters();
-                        }
-                    }, 300);
-                }
-            })
+                }, 300);
+            }
+        })
             .catch(err => {
                 const setupForm = document.getElementById('dynamicSetupForm');
                 if (setupForm) setupForm.innerHTML = `<p style="color:red; width:100%; text-align:center;">Hata: ${err}</p>`;
@@ -2094,6 +2451,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // UNJUMBLE İÇİN BAŞLATMA OVERRIDE
+            if (formData.GameType === 'unjumble') {
+                startBtn.textContent = startBtnText;
+                startBtn.disabled = false;
+                document.getElementById('setupArea').style.display = 'none';
+
+                const unjumbleGameArea = document.getElementById('unjumbleGameArea');
+                if (unjumbleGameArea) {
+                    unjumbleGameArea.style.display = 'flex';
+                    unjumbleGameArea.classList.remove('hidden-spa-module');
+                }
+
+                if (typeof UnjumbleEngine !== 'undefined') {
+                    UnjumbleEngine.init(formData);
+                } else {
+                    console.error("UnjumbleEngine yüklenemedi!");
+                }
+                return;
+            }
+
             const apiUrlStart = typeof AppConfig !== 'undefined' ? AppConfig.apiBaseUrl : '';
             if (apiUrlStart && apiUrlStart.trim() !== '') {
                 fetch(apiUrlStart, {
@@ -2204,6 +2581,12 @@ function goToLobby() {
     if (triviaGameArea) triviaGameArea.style.display = 'none'; // Added this line
     if (triviaGameArea) triviaGameArea.classList.add('hidden-spa-module'); // Added this line
 
+    const unjumbleGameArea = document.getElementById('unjumbleGameArea');
+    if (unjumbleGameArea) {
+        unjumbleGameArea.style.display = 'none';
+        unjumbleGameArea.classList.add('hidden-spa-module');
+    }
+
     const avatarrunGameArea = document.getElementById('avatarrunGameArea');
     if (avatarrunGameArea) {
         avatarrunGameArea.style.display = 'none';
@@ -2236,11 +2619,11 @@ function goToLobby() {
 }
 
 // Öğrenci PIN ile Katılım Ekranını Açar ve Avatarları Yükler
-window.openLivePinJoinArea = function() {
+window.openLivePinJoinArea = function () {
     // Diğer tüm alanları gizle
-    const areasToHide = ['setupArea', 'gameArea', 'lingoGameArea', 'quickRevealGameArea', 
-                         'baambooGameArea', 'dictionaryGameArea', 'tagWarGameArea', 
-                         'triviaGameArea', 'avatarrunGameArea', 'welcomeHero', 'gamesListArea', 'livePinStudentArea', 'livePinHostArea'];
+    const areasToHide = ['setupArea', 'gameArea', 'lingoGameArea', 'quickRevealGameArea',
+        'baambooGameArea', 'dictionaryGameArea', 'tagWarGameArea',
+        'triviaGameArea', 'avatarrunGameArea', 'unjumbleGameArea', 'welcomeHero', 'gamesListArea', 'livePinStudentArea', 'livePinHostArea'];
     areasToHide.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -2263,9 +2646,9 @@ window.openLivePinJoinArea = function() {
             const img = document.createElement('img');
             img.src = `game pics/avatars/${i}.png`;
             img.style = "width: 100%; aspect-ratio: 1; object-fit: contain; cursor: pointer; border-radius: 50%; opacity: 0.7; transition: 0.2s; border: 3px solid transparent;";
-            img.onerror = function() { this.style.display = 'none'; }; // Resim yoksa gizle
-            
-            img.onclick = function() {
+            img.onerror = function () { this.style.display = 'none'; }; // Resim yoksa gizle
+
+            img.onclick = function () {
                 // Öncekilerin seçimini kaldır
                 const allAvatars = grid.querySelectorAll('img');
                 allAvatars.forEach(a => {
