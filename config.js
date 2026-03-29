@@ -98,6 +98,16 @@ const AppConfig = {
             imageUrl: "./game pics/avatar_run_cover.png",
             isExternal: false,
             howToPlay: "<b>AVATAR RUN Nasıl Oynanır?</b><br><br>• <b>Tanım:</b> Takım çalışması, iletişim ve kusursuz doğru bilme üzerine kuruludur.<br>• <b>Nasıl Oynanır:</b><br>- Öğrenciler lobiden katılır ve isteğe bağlı olarak takımlara bölünür (veya bireysel yarışır).<br>- Her takımın bir avatarı ana tahtadaki ilerleme parkurunda yarışır.<br>- Takımlı Modda: Sorunun şıkları takım üyelerinin telefonlarına DAĞITILIR. Doğru seçenek sadece bir kişidedir! Takım üyeleri konuşarak doğru şıkkın kimde olduğunu bulmalıdır.<br>- Eğer takımdan herhangi biri BİR YANLIŞ bile yaparsa takımın puanı SIFIRLANIR ve baştan başlarlar.<br><br>• <b>Kazanma Şartı:</b> Tüm soruları hiç hata yapmadan en hızlı şekilde tamamlayıp bitiş çizgisine ulaşan takım kazanır."
+        },
+        {
+            id: "unjumble",
+            name: "Unjumble Sentence",
+            description: "Karışık verilen kelimeleri doğru sıraya diz, anlamlı cümleyi kur ve puanları topla!",
+            configSheet: "Unjumble_Config",
+            themeColor: "#8b5cf6",
+            imageUrl: "./game pics/unjumble_cover.png",
+            isExternal: false,
+            howToPlay: "<b>UNJUMBLE Nasıl Oynanır?</b><br><br>• <b>Tanım:</b> Kelimeleri sürükleyerek veya tıklayarak doğru sıraya dizme ve anlamlı İngilizce/Türkçe cümle oluşturma oyunudur.<br>• <b>Nasıl Oynanır:</b><br>- Ekranda kelimeler karışık kutucuklar halinde belirir.<br>- Doğru sırayla kutucuklara tıklayarak veya sürükleyerek cümleyi tamamlayın.<br>- [Onayla] butonuna bastığınızda cümle kontrol edilir.<br>- Doğruysa puan kazanırsınız ve kelimeler yeşil yanar.<br><br>• <b>Kazanma Şartı:</b> Belirlenen süre sonunda veya tüm cümleler bittiğinde en yüksek puanı alan grup kazanır."
         }
     ],
 
