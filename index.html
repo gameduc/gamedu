@@ -1129,6 +1129,12 @@
                                 style="background:rgba(139,92,246,0.2); color:#a78bfa;">0</span></h3>
                         <!-- Gelişmiş Filtreleme -->
                         <div style="flex:1; display:flex; gap:5px; flex-wrap:nowrap; justify-content:flex-end;">
+                            <select id="globalFilterType" onchange="window.filterSets('globalSetsList', 'globalSearchInput')" style="min-width:100px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(139,92,246,0.5); border-radius:5px; font-weight:bold;">
+                                <option value="">Tüm Tipler</option>
+                                <option value="wordspool">Kelime</option>
+                                <option value="qpool">Soru</option>
+                                <option value="sentence">Cümle</option>
+                            </select>
                             <select id="globalFilterGrade"
                                 onchange="window.filterSets('globalSetsList', 'globalSearchInput')"
                                 style="min-width:100px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(139,92,246,0.5); border-radius:5px;">
@@ -1176,6 +1182,12 @@
                                 <option value="date_asc">📅 En Eski</option>
                                 <option value="alpha_asc">🔤 Alfabetik (A-Z)</option>
                                 <option value="count_desc">🔢 Adet (Çoktan Aza)</option>
+                            </select>
+                            <select id="mySetsFilterType" onchange="window.filterSets('mySetsList', 'mySetsSearchInput')" style="min-width:100px; padding:8px; background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(59,130,246,0.5); border-radius:5px; font-weight:bold;">
+                                <option value="">Tüm Tipler</option>
+                                <option value="wordspool">Kelime</option>
+                                <option value="qpool">Soru</option>
+                                <option value="sentence">Cümle</option>
                             </select>
                             <select id="mySetsFilterGrade"
                                 onchange="window.filterSets('mySetsList', 'mySetsSearchInput')"
@@ -1254,6 +1266,7 @@
                             style="width:100%; padding:10px; background:rgba(15,23,42,0.8); color:#fff; border:1px solid var(--glass-border); border-radius:5px;">
                             <option value="wordspool">Kelime Seti (Bang, Lingo, QR, Dictionary)</option>
                             <option value="qpool">Soru Seti (BaamBoo, BeeComb)</option>
+                            <option value="sentence">Cümle Seti (Unjumble Sentence)</option>
                         </select>
                     </div>
 
@@ -1436,6 +1449,41 @@
             </div>
             <button id="avatarrunHostNextBtn" class="login-btn" style="background: #f43f5e; padding: 10px 25px; font-size: 1rem; min-width: 150px; display: none;">Dağıt / İlerlet</button>
             <button onclick="document.getElementById('avatarrunGameArea').style.display='none'; document.getElementById('setupArea').style.display='block';" class="login-btn" style="background: transparent; border: 1px solid var(--glass-border); padding: 10px 25px; font-size: 1rem;">⚙️ Ayarlara Dön</button>
+        </div>
+    </section>
+
+    <!-- UNJUMBLE SENTENCE OYUN ALANI -->
+    <section id="unjumbleGameArea" class="hidden-spa-module" style="display: none; padding: 20px; flex-direction: column; height: 100vh;">
+        <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 20px; border-radius: 20px; gap: 20px;">
+            <!-- Üst Bilgi Barı -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <h3 id="unjumbleGameTitle" style="color: #6366f1; margin: 0; font-weight: 800; font-size: 1.5rem;">Cümle Sıralama</h3>
+                <div style="display: flex; gap: 15px; font-weight: bold; font-size: 1.2rem;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 8px;">Puan: <span id="unjumbleScore" style="color: #4ade80;">0</span></div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 8px;">Kalan: <span id="unjumbleRemaining" style="color: #60a5fa;">0</span></div>
+                </div>
+            </div>
+
+            <!-- Soru Alanı (Yerleşim Alanı) -->
+            <div id="unjumblePlacementZone" style="flex: 2; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 10px; background: rgba(0,0,0,0.2); border-radius: 15px; border: 2px dashed rgba(255,255,255,0.1); min-height: 150px; padding: 20px;">
+                <!-- Yerleştirilen kelime kutucukları buraya gelecek -->
+            </div>
+
+            <!-- Çeviri ve İpucu (Gizli Opsiyonel) -->
+            <div style="text-align: center; min-height: 30px;">
+                <p id="unjumbleTranslation" style="color: #94a3b8; font-size: 1.1rem; font-style: italic; margin: 0;"></p>
+            </div>
+
+            <!-- Seçenekler Alanı (Karışık Kelimeler) -->
+            <div id="unjumbleOptionsZone" style="flex: 1; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 15px; padding: 20px; background: rgba(255,255,255,0.02); border-radius: 15px;">
+                <!-- Karışık kelime kutucukları buraya gelecek -->
+            </div>
+
+            <!-- Kontrol / Aksiyon Butonları -->
+            <div style="display: flex; justify-content: center; gap: 15px;">
+                <button id="unjumbleResetBtn" class="login-btn" style="background: #4b5563; padding: 10px 25px;" onclick="UnjumbleEngine.resetCurrent()">🔄 Sıfırla</button>
+                <button onclick="UnjumbleEngine.exitGame()" class="login-btn" style="background: transparent; border: 1px solid var(--glass-border); padding: 10px 25px;">⚙️ Ayarlara Dön</button>
+            </div>
         </div>
     </section>
 
@@ -1768,6 +1816,7 @@
     <script src="./js/app-trivia-editor.js?v=2"></script>
     <script src="./js/trivia.js?v=2"></script>
     <script src="./js/avatarrun.js?v=2"></script>
+    <script src="./js/unjumble.js?v=1"></script>
 </body>
 
 </html>
