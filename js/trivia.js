@@ -23,37 +23,55 @@ const TriviaEngine = {
         this.state.mode = formData.TriviaGameMode && formData.TriviaGameMode.includes("PIN") ? "pin" : "split";
         if(modeBadge) modeBadge.textContent = this.state.mode === 'split' ? "Akıllı Tahta Düellosu" : "Live PIN Modu (Yakında)";
 
+        // Grup İsimlerini Ayarla
+        this.state.groupNames = { A: "Mavi Takım (Sol)", B: "Kırmızı Takım (Sağ)" };
+        if (formData.join) {
+            const names = formData.join.split(',');
+            if (names[0]) this.state.groupNames.A = names[0];
+            if (names[1]) this.state.groupNames.B = names[1];
+        }
+
         if(qText) qText.textContent = "Veritabanından Sorular Çekiliyor...";
         
         this.fetchQuestions(formData.TriviaSetsCheckbox);
     },
 
     fetchQuestions: function(setId) {
-        if(!setId) {
-            this.showError("Set ID bulunamadı. Lütfen bir set seçip tekrar deneyin.");
+        const setIds = setId ? setId.split(',') : [];
+        if (setIds.length === 0) {
+            this.showError("Lütfen en az bir soru seti seçin.");
             return;
         }
 
-        database.ref('MasterPool').child(setId).once('value').then(snap => {
-            if(!snap.exists()) {
-                this.showError("Bu set veritabanında bulunamadı.");
-                return;
-            }
-            const data = snap.val();
-            if(!data.Questions || !Array.isArray(data.Questions) || data.Questions.length === 0) {
-                this.showError("Sette hiç soru yok veya format uyumsuz.");
+        let allQuestions = [];
+        let promises = setIds.map(id => database.ref('MasterPool/' + id).once('value'));
+
+        Promise.all(promises).then(snapshots => {
+            snapshots.forEach(snap => {
+                if (snap.exists()) {
+                    const data = snap.val();
+                    if (data.Questions && Array.isArray(data.Questions)) {
+                        allQuestions = allQuestions.concat(data.Questions);
+                    }
+                    if (!this.state.gameTitle) {
+                        this.state.gameTitle = data.Title;
+                    }
+                }
+            });
+
+            if (allQuestions.length === 0) {
+                this.showError("Seçilen setlerde soru bulunamadı.");
                 return;
             }
 
-            this.state.questions = data.Questions;
+            this.state.questions = allQuestions;
             this.state.currentIndex = 0;
             this.state.scores = { A: 0, B: 0 };
-            document.getElementById('triviaGameTitle').textContent = data.Title || "GamEdu Trivia";
+            document.getElementById('triviaGameTitle').textContent = this.state.gameTitle || "GamEdu Trivia";
             
             if(this.state.mode === 'split') {
                 this.startQuestionLoop();
             } else {
-                // PIN MODE (Kahoot)
                 this.initLiveRoom();
             }
         }).catch(err => {
@@ -682,11 +700,11 @@ const TriviaEngine = {
 
         const teamA = document.createElement('div');
         teamA.style = "flex: 1; background: rgba(59, 130, 246, 0.1); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 12px; padding: 15px; display:flex; flex-direction:column; gap:10px;";
-        teamA.innerHTML = `<h3 style="color:#60a5fa; margin:0 0 10px 0;">Mavi Takım (Sol)</h3>`;
+        teamA.innerHTML = `<h3 style="color:#60a5fa; margin:0 0 10px 0;">${this.state.groupNames.A}</h3>`;
 
         const teamB = document.createElement('div');
         teamB.style = "flex: 1; background: rgba(239, 68, 68, 0.1); border: 2px solid rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 15px; display:flex; flex-direction:column; gap:10px;";
-        teamB.innerHTML = `<h3 style="color:#f87171; margin:0 0 10px 0;">Kırmızı Takım (Sağ)</h3>`;
+        teamB.innerHTML = `<h3 style="color:#f87171; margin:0 0 10px 0;">${this.state.groupNames.B}</h3>`;
 
         if(q.type === 'mcq' || q.type === 'tf') {
             q.answers.forEach((ans, ansIdx) => {
