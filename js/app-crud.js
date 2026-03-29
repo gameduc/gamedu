@@ -415,6 +415,18 @@ function renderCrudTable(dataArray, type) {
                 </td>
                 `}
             `;
+        } else if (type === 'sentence') {
+            tr.innerHTML = `
+                <td style="font-weight:bold;">${item.SentenceText || ''}</td>
+                <td>${item.SentenceTR || '-'}</td>
+                <td>${item.Clue && item.Clue.startsWith('http') ? '<a href="' + item.Clue + '" target="_blank">📷 (Aç)</a>' : (item.Clue || '-')}</td>
+                ${window.isCrudReadOnly ? '' : `
+                <td style="white-space:nowrap;">
+                    <button class="action-btn btn-edit" onclick="editRow(${index}, 'sentence')">✎ Düzenle</button>
+                    <button class="action-btn btn-delete" onclick="deleteRow(${index})">X</button>
+                </td>
+                `}
+            `;
         } else {
             tr.innerHTML = `
                 <td style="font-weight:bold;">${item.Word || ''}</td>
@@ -484,6 +496,16 @@ window.editRow = function (rowIndex, type) {
                 <button class="action-btn btn-cancel-inline" onclick="cancelEdit(${rowIndex}, 'qpool')" style="background:#ef4444; color:#fff; font-weight:bold; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-left:4px;">✖ İptal</button>
             </td>
         `;
+    } else if (type === 'sentence') {
+        rowElem.innerHTML = `
+            <td><input type="text" id="e_Sent_${rowIndex}" value="${item.SentenceText || ''}" style="width:100%;"></td>
+            <td><input type="text" id="e_SentTR_${rowIndex}" value="${item.SentenceTR || ''}" style="width:100%;"></td>
+            <td><input type="text" id="e_Clue_S_${rowIndex}" value="${item.Clue || ''}" style="width:100%;"></td>
+            <td style="white-space:nowrap;">
+                <button class="action-btn btn-save-inline" onclick="saveEditedRow(${rowIndex}, 'sentence')" style="background:#10b981; color:#fff; font-weight:bold; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">✔ Kaydet</button>
+                <button class="action-btn btn-cancel-inline" onclick="cancelEdit(${rowIndex}, 'sentence')" style="background:#ef4444; color:#fff; font-weight:bold; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-left:4px;">✖ İptal</button>
+            </td>
+        `;
     } else {
         rowElem.innerHTML = `
             <td><input type="text" id="e_W_${rowIndex}" value="${item.Word || ''}" style="width:100%;"></td>
@@ -531,6 +553,13 @@ window.saveEditedRow = function (rowIndex, type) {
             updatedObj.OptionD = "";
             updatedObj.OptionE = "";
         }
+    } else if (type === 'sentence') {
+        updatedObj = {
+            ...updatedObj,
+            SentenceText: document.getElementById('e_Sent_' + rowIndex).value.trim(),
+            SentenceTR: document.getElementById('e_SentTR_' + rowIndex).value.trim(),
+            Clue: document.getElementById('e_Clue_S_' + rowIndex).value.trim()
+        };
     } else {
         updatedObj = {
             ...updatedObj,
@@ -608,6 +637,13 @@ function renderSingleAddRow(type) {
             <input type="text" class="n_Ans" ${isAcikUclu ? '' : 'maxlength="1"'} style="width:100%; padding:5px; font-weight:bold; color:#10b981; text-align:center; border:1px solid #ccc; border-radius:3px;" placeholder="${isAcikUclu ? 'Doğru Cevabı Yazın' : 'A'}">
             <input type="text" class="n_ImgURL" placeholder="URL" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:3px;">
         `;
+    }
+    if (type === 'sentence') {
+        rowDiv.innerHTML = `
+            <input type="text" class="n_SentenceText" placeholder="She goes to school..." style="font-weight:bold; width:100%; padding:5px; border:1px solid #ccc; border-radius:3px;">
+            <input type="text" class="n_SentenceTR" placeholder="O okula gider..." style="width:100%; padding:5px; border:1px solid #ccc; border-radius:3px;">
+            <input type="text" class="n_Clue" placeholder="İpucu veya Görsel URL" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:3px;">
+        `;
     } else {
         rowDiv.innerHTML = `
             <input type="text" class="n_Word" placeholder="Apple" style="font-weight:bold; width:100%; padding:5px; border:1px solid #ccc; border-radius:3px;">
@@ -657,6 +693,16 @@ function renderCrudAddForm(type) {
         } else {
             dynamicInputsHeader.style.gridTemplateColumns = "30px 45px 1.5fr 1fr 50px 50px 50px 50px 50px 40px 70px";
         }
+        dynamicInputsHeader.style.gap = "5px";
+    } else if (type === 'sentence') {
+        dynamicInputsHeader.innerHTML = `
+            <div></div>
+            <div>Cümle <span style="color:red">*</span></div>
+            <div>Türkçe Anlamı</div>
+            <div>İpucu</div>
+        `;
+        dynamicInputsHeader.style.display = "grid";
+        dynamicInputsHeader.style.gridTemplateColumns = "30px 1.5fr 1fr 1fr";
         dynamicInputsHeader.style.gap = "5px";
     } else {
         dynamicInputsHeader.innerHTML = `
@@ -726,6 +772,23 @@ if (crudAddNewItemBtn) {
                     OptionD: isAcikUclu ? "" : row.querySelector('.n_D').value.trim(),
                     OptionE: isAcikUclu ? "" : row.querySelector('.n_E').value.trim(),
                     CorrectAnswer: ans
+                });
+            } else if (type === 'sentence') {
+                const level = currentSetData.GlobalLevel || "Genel";
+                const cg = currentSetData.GlobalClass || "Tümü";
+                const ls = currentSetData.GlobalLesson || "Genel";
+                const un = currentSetData.GlobalTopic || "Genel";
+                const text = row.querySelector('.n_SentenceText').value.trim();
+
+                if (!text) {
+                    showOzelAlert(`Hata: Satır ${index + 1}'de '*' işaretli alanları doldurun. (Cümle şart)`, "hata");
+                    hasError = true; return;
+                }
+
+                newObjects.push({
+                    Level: level, ClassGrade: cg, Lesson: ls, Unit: un, Topic: un, SentenceText: text,
+                    SentenceTR: row.querySelector('.n_SentenceTR').value.trim(),
+                    Clue: row.querySelector('.n_Clue').value.trim()
                 });
             } else {
                 const level = currentSetData.GlobalLevel || "Genel";
